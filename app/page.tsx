@@ -2,9 +2,9 @@ import { fetchPolicies } from "@/lib/bizinfo";
 import PolicyList from "@/components/PolicyList";
 
 export const metadata = {
-  title: "정부지원사업 모아보기 | 매일 갱신되는 지원사업·정책",
+  title: "꿀청 · 정부지원사업 모아보기 | 매일 갱신되는 지원사업·정책",
   description:
-    "전국 정부지원사업 공고를 한 곳에서. 분야·지역별 필터, 마감임박 정렬, 내 정보 기반 맞춤 검색으로 놓치는 지원금 없이 확인하세요.",
+    "전국 정부지원사업 공고를 한 곳에서. 분야·지역별 필터, 마감임박 정렬, 내 정보 기반 맞춤 검색으로 놓치는 지원금 없이 확인하세요. — 꿀청",
 };
 
 // 1시간마다 페이지 재생성 (ISR)
@@ -24,7 +24,7 @@ export default async function Home() {
   let policies: Awaited<ReturnType<typeof fetchPolicies>> = [];
   let error = "";
   try {
-    policies = await fetchPolicies(100);
+    policies = await fetchPolicies(2000);
   } catch (e) {
     error = e instanceof Error ? e.message : "데이터를 불러오지 못했습니다.";
   }
@@ -32,8 +32,8 @@ export default async function Home() {
   return (
     <main>
       {/* 딥 인디고 'night' 히어로 밴드 — 페이지의 단 하나의 어두운 섬 */}
-      <section className="relative overflow-hidden bg-secondary text-white">
-        {/* 장식용 glowing sticker dots */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#fff7da] to-[#fce6a0] text-ink">
+        {/* 장식용 sticker dots */}
         <div className="pointer-events-none absolute inset-0">
           {STARS.map((s, i) => (
             <span
@@ -44,23 +44,26 @@ export default async function Home() {
                 left: s.left,
                 width: s.s,
                 height: s.s,
-                opacity: 0.8,
+                opacity: 0.5,
               }}
             />
           ))}
         </div>
 
         <div className="relative mx-auto max-w-3xl px-4 py-16 sm:py-20">
+          <div className="mb-6 text-xl font-extrabold tracking-tight text-[#92600a]">
+            꿀청
+          </div>
           <h1 className="text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
             정부지원사업,
             <br />
             흩어진 공고를 한 곳에서
           </h1>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-white/70">
+          <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-muted">
             전국 지원사업을 모아 마감임박순으로 정리했어요.
             <br />
-            <span className="mt-1 inline-block text-lg font-semibold text-white">
-              내 정보를 넣으면 <span className="text-accent-sky">맞춤 정책</span>을
+            <span className="mt-1 inline-block text-lg font-semibold text-ink">
+              내 정보를 넣으면 <span className="text-primary">맞춤 정책</span>을
               찾아드립니다.
             </span>
           </p>

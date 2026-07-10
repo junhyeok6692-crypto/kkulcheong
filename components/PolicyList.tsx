@@ -138,16 +138,13 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
   const [q, setQ] = useState("");
   const [hideExpired, setHideExpired] = useState(true);
   const [byRegion, setByRegion] = useState(false);
-  const [matchMine, setMatchMine] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
   // 프로필 (localStorage 연동)
   const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    const p = loadProfile();
-    setProfile(p);
-    setMatchMine(isProfileSet(p));
+    setProfile(loadProfile());
     setLoaded(true);
   }, []);
   useEffect(() => {
@@ -164,7 +161,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
     const kw = q.trim().toLowerCase();
     return policies
       .filter((p) => {
-        if (matchMine && isProfileSet(profile) && !matchPolicy(p, profile)) return false;
+        if (isProfileSet(profile) && !matchPolicy(p, profile)) return false;
         if (hideExpired) {
           const d = daysLeft(p.endDate);
           if (d !== null && d < 0) return false;
@@ -182,7 +179,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
         const vb = db === null || db < 0 ? Infinity : db;
         return va - vb;
       });
-  }, [policies, q, hideExpired, matchMine, profile]);
+  }, [policies, q, hideExpired, profile]);
 
   const grouped = useMemo(() => groupByRegion(filtered), [filtered]);
   const profileSet = isProfileSet(profile);
@@ -262,17 +259,6 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
         />
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <button
-            onClick={() => setMatchMine((v) => !v)}
-            disabled={!profileSet}
-            className={`rounded-lg px-3 py-1.5 font-medium transition ${
-              matchMine && profileSet
-                ? "bg-primary text-on-primary"
-                : "border border-hairline bg-surface text-ink-muted disabled:opacity-40"
-            }`}
-          >
-            내 맞춤만
-          </button>
-          <button
             onClick={() => setByRegion((v) => !v)}
             className={`rounded-lg px-3 py-1.5 font-medium transition ${
               byRegion
@@ -327,7 +313,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
       {filtered.length === 0 && (
         <p className="py-16 text-center text-ink-faint">
           조건에 맞는 지원사업이 없습니다.
-          {matchMine && " 내 정보 조건을 넓혀보세요."}
+          {profileSet && " 내 정보 조건을 넓혀보세요."}
         </p>
       )}
     </div>

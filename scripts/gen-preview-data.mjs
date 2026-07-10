@@ -4,7 +4,7 @@
 import { writeFileSync } from "node:fs";
 
 const key = process.env.BIZINFO_API_KEY;
-const COUNT = 100;
+const COUNT = 2000; // 전체 공고 (현재 약 1500건)
 const REGIONS = ["서울","부산","대구","인천","광주","대전","울산","세종","경기","강원","충북","충남","전북","전남","경북","경남","제주","전국"];
 
 const s = (v) => (v == null ? "" : String(v).trim());

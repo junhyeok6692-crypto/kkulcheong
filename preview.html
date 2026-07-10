@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>정부지원사업 모아보기 — 디자인 미리보기</title>
+<title>꿀청 · 정부지원사업 모아보기</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendard-variable-dynamic-subset.min.css" />
 <style>
   :root{
@@ -21,16 +21,14 @@
   .soft{box-shadow:rgba(0,0,0,.01) 0 .175px 1.041px,rgba(0,0,0,.02) 0 .8px 2.925px,rgba(0,0,0,.027) 0 2.025px 7.847px,rgba(0,0,0,.04) 0 4px 18px}
 
   /* Hero */
-  .hero{position:relative;overflow:hidden;background:var(--secondary);color:#fff}
-  .hero .dots span{position:absolute;border-radius:9999px;filter:blur(2px);opacity:.8}
-  .hero .inner{position:relative;max-width:768px;margin:0 auto;padding:64px 16px}
-  .badge{display:inline-flex;align-items:center;border-radius:9999px;background:rgba(255,255,255,.1);
-    padding:4px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.9);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
-  .hero h1{margin:20px 0 0;font-size:44px;line-height:1.05;letter-spacing:-.03em;font-weight:700}
-  .hero p{margin:20px 0 0;max-width:460px;font-size:16px;line-height:1.6;color:rgba(255,255,255,.7)}
-  .hero p .hl{display:inline-block;margin-top:4px;font-size:18px;font-weight:600;color:#fff}
-  .hero p .hl b{color:var(--sky);font-weight:600}
+  .hero{position:relative;overflow:hidden;background:linear-gradient(180deg,#fff7da,#fce6a0);color:var(--ink)}
+  .hero .dots span{position:absolute;border-radius:9999px;filter:blur(2px);opacity:.5}
+  .hero .inner{position:relative;max-width:768px;margin:0 auto;padding:56px 16px 64px}
+  .brand{font-size:20px;font-weight:800;letter-spacing:-.01em;color:#92600a}
+  .hero h1{margin:24px 0 0;font-size:44px;line-height:1.05;letter-spacing:-.03em;font-weight:700}
+  .hero p{margin:20px 0 0;max-width:460px;font-size:16px;line-height:1.6;color:var(--ink-muted)}
+  .hero p .hl{display:inline-block;margin-top:4px;font-size:18px;font-weight:600;color:var(--ink)}
+  .hero p .hl b{color:var(--primary);font-weight:600}
   @media(max-width:600px){.hero h1{font-size:34px}}
 
   /* Profile panel */
@@ -108,6 +106,7 @@
       <span style="top:48%;left:48%;width:6px;height:6px;background:var(--green)"></span>
     </div>
     <div class="inner">
+      <div class="brand">꿀청</div>
       <h1>정부지원사업,<br />흩어진 공고를 한 곳에서</h1>
       <p>전국 지원사업을 모아 마감임박순으로 정리했어요.<br /><span class="hl">내 정보를 넣으면 <b>맞춤 정책</b>을 찾아드립니다.</span></p>
     </div>
@@ -141,7 +140,6 @@
     <div class="bar">
       <input type="text" id="q" placeholder="사업명·키워드 검색 (예: 창업, 자금, 청년)" />
       <div class="row">
-        <button class="tgl" id="matchBtn" disabled>내 맞춤만</button>
         <button class="tgl dark" id="regionBtn">지역별 보기</button>
         <label class="check"><input type="checkbox" id="hideExpired" checked /> 마감 제외</label>
         <span class="count"><span id="count">10</span>건</span>
@@ -151,7 +149,7 @@
     <div id="list"></div>
   </div>
 
-  <footer><div class="in">데이터 출처: 기업마당(bizinfo.go.kr) · 1시간마다 갱신 · <b>디자인 미리보기(샘플 데이터)</b></div></footer>
+  <footer><div class="in"><b>꿀청</b> · 데이터 출처: 기업마당(bizinfo.go.kr) · 미리보기(실데이터 스냅샷)</div></footer>
   <p class="note">※ 이 파일은 디자인 확인용 정적 미리보기입니다. 실제 서비스는 <code>npm run dev</code> → localhost:3000 에서 실시간 데이터로 작동합니다.</p>
 
 <script src="preview-data.js"></script>
@@ -163,7 +161,7 @@
   const TARGET_KW={"예비창업자":["예비창업"],"1인·개인기업":["1인","개인"],"소상공인":["소상공인"],"중소기업":["중소기업"],"중견기업":["중견기업"],"청년":["청년"]};
 
   // 공고 데이터는 preview-data.js 에서 로드 (기업마당 실데이터 100건)
-  const state={q:"",hideExpired:true,byRegion:false,matchMine:false,region:"",targets:[],interests:[]};
+  const state={q:"",hideExpired:true,byRegion:false,region:"",targets:[],interests:[]};
   const KEY="policyhub.preview.profile";
   try{Object.assign(state,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
 
@@ -182,7 +180,7 @@
 
   function render(){
     let list=DATA.filter(p=>{
-      if(state.matchMine&&profileSet()&&!match(p))return false;
+      if(profileSet()&&!match(p))return false;
       if(state.hideExpired){const d=daysLeft(p.end);if(d!==null&&d<0)return false;}
       if(state.q){const hay=(p.t+p.sum).toLowerCase();if(!hay.includes(state.q.toLowerCase()))return false;}
       return true;
@@ -191,7 +189,7 @@
 
     $("#count").textContent=list.length;
     const el=$("#list");
-    if(!list.length){el.innerHTML='<p class="empty">조건에 맞는 지원사업이 없습니다.'+(state.matchMine?' 내 정보 조건을 넓혀보세요.':'')+'</p>';return;}
+    if(!list.length){el.innerHTML='<p class="empty">조건에 맞는 지원사업이 없습니다.'+(profileSet()?' 내 정보 조건을 넓혀보세요.':'')+'</p>';return;}
 
     if(state.byRegion){
       const order=[...REGION_OPTIONS,"전국","전국·공통"];const map={};
@@ -230,22 +228,18 @@
   buildChips("#targets",TARGET_OPTIONS,"targets");
   buildChips("#interests",INTEREST_OPTIONS,"interests");
 
-  function afterProfile(){saveProfile();updateTagline();updateMatchBtn();render()}
+  function afterProfile(){saveProfile();updateTagline();render()}
   function updateTagline(){const t=$("#tagline");const parts=[state.region,...state.interests].filter(Boolean).slice(0,3);
     if(profileSet()){t.style.display="";t.textContent=parts.join(" · ")+(state.interests.length>2?" …":"")}else t.style.display="none"}
-  function updateMatchBtn(){const b=$("#matchBtn");b.disabled=!profileSet();
-    if(!profileSet())state.matchMine=false;b.classList.toggle("on",state.matchMine&&profileSet())}
 
   $("#panelToggle").onclick=()=>{const p=$("#panel");p.classList.toggle("open");
     $("#panelToggle .caret").textContent=p.classList.contains("open")?"▲":"▼"};
   $("#q").oninput=e=>{state.q=e.target.value;render()};
   $("#hideExpired").onchange=e=>{state.hideExpired=e.target.checked;render()};
-  $("#matchBtn").onclick=()=>{if(!profileSet())return;state.matchMine=!state.matchMine;updateMatchBtn();render()};
   $("#regionBtn").onclick=()=>{state.byRegion=!state.byRegion;$("#regionBtn").classList.toggle("on",state.byRegion);render()};
 
   // 초기화
-  if(profileSet())state.matchMine=true;
-  updateTagline();updateMatchBtn();render();
+  updateTagline();render();
 </script>
 </body>
 </html>
