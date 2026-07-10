@@ -29,8 +29,9 @@
   --color-accent-green: #1aae39;
   --color-accent-brown: #523410;
 
-  --font-sans: var(--font-inter), -apple-system, system-ui, "Segoe UI",
-    Helvetica, Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, system-ui,
+    "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", Helvetica, Arial,
+    sans-serif;
 }
 
 :root {

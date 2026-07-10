@@ -1,12 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "정부지원사업 모아보기",
@@ -20,8 +13,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full">{children}</body>
+    <html lang="ko" className="h-full antialiased">
+      <body className="min-h-full">
+        {/* Pretendard (한글 최적화 폰트) */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendard-variable-dynamic-subset.min.css"
+        />
+        {children}
+      </body>
     </html>
   );
 }

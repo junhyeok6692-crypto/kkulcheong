@@ -34,15 +34,24 @@ function daysLeft(endDate: string | null): number | null {
   return Math.ceil((end.getTime() - now.getTime()) / 86400000);
 }
 
+// 마감임박 기준: D-5 이내
+const URGENT_DAYS = 5;
+function isUrgent(endDate: string | null): boolean {
+  const d = daysLeft(endDate);
+  return d !== null && d >= 0 && d <= URGENT_DAYS;
+}
+
 function Dday({ endDate }: { endDate: string | null }) {
   const d = daysLeft(endDate);
   if (d === null) return <span className="text-xs text-ink-faint">상시·미정</span>;
   if (d < 0) return <span className="text-xs text-ink-faint">마감</span>;
-  return (
-    <span className={`text-xs font-semibold ${d <= 7 ? "text-accent-orange" : "text-ink-muted"}`}>
-      D-{d}
-    </span>
-  );
+  if (d <= URGENT_DAYS)
+    return (
+      <span className="rounded-full bg-accent-orange px-2 py-0.5 text-xs font-semibold text-white">
+        마감임박 D-{d}
+      </span>
+    );
+  return <span className="text-xs font-medium text-ink-muted">D-{d}</span>;
 }
 
 function Chip({
@@ -70,12 +79,15 @@ function Chip({
 
 function Card({ p }: { p: Policy }) {
   const dot = CAT_DOT[p.category] ?? "bg-ink-faint";
+  const urgent = isUrgent(p.endDate);
   return (
     <a
       href={p.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block rounded-[12px] border border-hairline bg-surface p-4 transition hover:shadow-soft"
+      className={`block rounded-[12px] border bg-surface p-4 transition hover:shadow-soft ${
+        urgent ? "border-accent-orange/50 ring-1 ring-accent-orange/25" : "border-hairline"
+      }`}
     >
       <div className="mb-1.5 flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-2 py-0.5 text-xs text-ink-secondary">
@@ -96,9 +108,9 @@ function Card({ p }: { p: Policy }) {
         <p className="mb-2 line-clamp-2 text-sm text-ink-muted">{p.summary}</p>
       )}
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
-        <span>🏛 {p.org}</span>
-        {p.target && <span>🎯 {p.target}</span>}
-        {p.period && <span>📅 {p.period}</span>}
+        <span>{p.org}</span>
+        {p.target && <span>대상 {p.target}</span>}
+        {p.period && <span>{p.period}</span>}
       </div>
     </a>
   );
@@ -183,7 +195,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
           onClick={() => setShowProfile((s) => !s)}
           className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-ink"
         >
-          <span>🙋 내 정보로 맞춤 찾기</span>
+          <span>내 정보로 맞춤 찾기</span>
           {profileSet && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
               {[profile.region, ...profile.interests].filter(Boolean).slice(0, 3).join(" · ")}
@@ -258,7 +270,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
                 : "border border-hairline bg-surface text-ink-muted disabled:opacity-40"
             }`}
           >
-            ✨ 내 맞춤만
+            내 맞춤만
           </button>
           <button
             onClick={() => setByRegion((v) => !v)}
@@ -268,7 +280,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
                 : "border border-hairline bg-surface text-ink-muted"
             }`}
           >
-            🗺 지역별 보기
+            지역별 보기
           </button>
           <label className="flex items-center gap-1.5 text-ink-muted">
             <input

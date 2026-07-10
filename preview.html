@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>정부지원사업 모아보기 — 디자인 미리보기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendard-variable-dynamic-subset.min.css" />
+<style>
+  :root{
+    --canvas:#f6f5f4; --surface:#fff; --hairline:#e6e6e6;
+    --ink:#0a0a0a; --ink-2:#31302e; --ink-muted:#615d59; --ink-faint:#a39e98;
+    --primary:#0075de; --primary-active:#005bab; --secondary:#213183;
+    --sky:#62aef0; --purple:#d6b6f6; --pink:#ff64c8; --orange:#dd5b00;
+    --teal:#2a9d99; --green:#1aae39; --brown:#523410;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--ink);
+    font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:768px;margin:0 auto;padding:0 16px}
+  .soft{box-shadow:rgba(0,0,0,.01) 0 .175px 1.041px,rgba(0,0,0,.02) 0 .8px 2.925px,rgba(0,0,0,.027) 0 2.025px 7.847px,rgba(0,0,0,.04) 0 4px 18px}
+
+  /* Hero */
+  .hero{position:relative;overflow:hidden;background:var(--secondary);color:#fff}
+  .hero .dots span{position:absolute;border-radius:9999px;filter:blur(2px);opacity:.8}
+  .hero .inner{position:relative;max-width:768px;margin:0 auto;padding:64px 16px}
+  .badge{display:inline-flex;align-items:center;border-radius:9999px;background:rgba(255,255,255,.1);
+    padding:4px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.9);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+  .hero h1{margin:20px 0 0;font-size:44px;line-height:1.05;letter-spacing:-.03em;font-weight:700}
+  .hero p{margin:16px 0 0;max-width:460px;font-size:16px;line-height:1.6;color:rgba(255,255,255,.7)}
+  @media(max-width:600px){.hero h1{font-size:34px}}
+
+  /* Profile panel */
+  .panel{margin:24px 0 16px;border:1px solid var(--hairline);border-radius:12px;background:var(--surface)}
+  .panel>button{display:flex;width:100%;align-items:center;gap:8px;padding:12px 16px;
+    background:none;border:0;font:inherit;font-weight:500;text-align:left;cursor:pointer;color:var(--ink)}
+  .panel .tagline{border-radius:9999px;background:rgba(0,117,222,.1);padding:2px 8px;font-size:12px;font-weight:500;color:var(--primary)}
+  .panel .caret{margin-left:auto;color:var(--ink-faint)}
+  .panel .body{border-top:1px solid var(--hairline);padding:16px;display:none}
+  .panel.open .body{display:block}
+  .panel .grp{margin-bottom:16px}
+  .panel .grp:last-child{margin-bottom:0}
+  .lbl{font-size:12px;font-weight:600;color:var(--ink-muted);margin:0 0 8px}
+  select{border:1px solid var(--hairline);border-radius:4px;background:var(--surface);padding:6px 10px;font:inherit;font-size:14px;color:var(--ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--hairline);background:var(--surface);color:var(--ink-muted);
+    border-radius:9999px;padding:4px 12px;font:inherit;font-size:14px;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:rgba(0,117,222,.4)}
+  .chip.on{border-color:var(--primary);background:var(--primary);color:#fff}
+
+  /* Filter bar */
+  .bar{position:sticky;top:0;z-index:10;margin:0 -16px 24px;padding:16px;
+    border-bottom:1px solid var(--hairline);background:rgba(246,245,244,.9);backdrop-filter:blur(8px)}
+  .bar input[type=text]{width:100%;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);
+    padding:10px 16px;font:inherit;font-size:14px;color:var(--ink);margin-bottom:12px}
+  .bar input[type=text]:focus{outline:0;border-color:var(--primary)}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+  .tgl{border:1px solid var(--hairline);background:var(--surface);color:var(--ink-muted);
+    border-radius:8px;padding:6px 12px;font:inherit;font-weight:500;cursor:pointer;transition:.15s}
+  .tgl.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .tgl.dark.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .tgl:disabled{opacity:.4;cursor:not-allowed}
+  .count{margin-left:auto;color:var(--ink-faint)}
+  .check{display:flex;align-items:center;gap:6px;color:var(--ink-muted);cursor:pointer}
+  .check input{accent-color:var(--primary)}
+
+  /* Cards */
+  ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+  .card{display:block;border:1px solid var(--hairline);border-radius:12px;background:var(--surface);padding:16px;transition:box-shadow .15s}
+  .card:hover{box-shadow:rgba(0,0,0,.01) 0 .175px 1.041px,rgba(0,0,0,.02) 0 .8px 2.925px,rgba(0,0,0,.027) 0 2.025px 7.847px,rgba(0,0,0,.04) 0 4px 18px}
+  .meta{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .cat{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--hairline);border-radius:9999px;padding:2px 8px;font-size:12px;color:var(--ink-2)}
+  .dot{width:6px;height:6px;border-radius:9999px}
+  .rgn{border-radius:9999px;background:var(--canvas);padding:2px 8px;font-size:12px;color:var(--ink-muted)}
+  .dday{margin-left:auto;font-size:12px;font-weight:500}
+  .dday.normal{color:var(--ink-muted)} .dday.none{color:var(--ink-faint);font-weight:400}
+  .dday-badge{margin-left:auto;background:var(--orange);color:#fff;border-radius:9999px;padding:2px 8px;font-size:12px;font-weight:600;white-space:nowrap}
+  .card.urgent{border-color:rgba(221,91,0,.5);box-shadow:0 0 0 1px rgba(221,91,0,.22)}
+  .card h3{margin:0 0 4px;font-size:16px;font-weight:600;line-height:1.35}
+  .card .sum{margin:0 0 8px;font-size:14px;color:var(--ink-muted);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .foot{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--ink-faint)}
+
+  /* Region groups */
+  .grpsec{margin-bottom:32px}
+  .grpsec h2{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:18px;font-weight:700}
+  .grpsec .rtag{border-radius:6px;background:var(--primary);color:#fff;padding:2px 8px;font-size:14px}
+  .grpsec .rcnt{font-size:14px;font-weight:400;color:var(--ink-faint)}
+
+  .empty{padding:64px 0;text-align:center;color:var(--ink-faint)}
+  footer{border-top:1px solid var(--hairline);background:var(--canvas)}
+  footer .in{max-width:768px;margin:0 auto;padding:32px 16px;text-align:center;font-size:12px;color:var(--ink-faint)}
+  .note{max-width:768px;margin:12px auto 0;padding:0 16px;font-size:12px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="dots">
+      <span style="top:18%;left:12%;width:8px;height:8px;background:var(--sky)"></span>
+      <span style="top:30%;left:84%;width:10px;height:10px;background:var(--pink)"></span>
+      <span style="top:62%;left:22%;width:7px;height:7px;background:var(--purple)"></span>
+      <span style="top:70%;left:72%;width:9px;height:9px;background:var(--teal)"></span>
+      <span style="top:12%;left:60%;width:6px;height:6px;background:var(--orange)"></span>
+      <span style="top:48%;left:48%;width:6px;height:6px;background:var(--green)"></span>
+    </div>
+    <div class="inner">
+      <span class="badge">매일 자동 갱신 · 총 <span id="total">10</span>건</span>
+      <h1>정부지원사업,<br />흩어진 공고를 한 곳에서</h1>
+      <p>전국 지원사업을 모아 마감임박순으로 정리했어요. 내 정보를 넣으면 나에게 해당되는 것만 골라 보여드립니다.</p>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <!-- PROFILE -->
+    <div class="panel" id="panel">
+      <button id="panelToggle">
+        <span>내 정보로 맞춤 찾기</span>
+        <span class="tagline" id="tagline" style="display:none"></span>
+        <span class="caret">▼</span>
+      </button>
+      <div class="body">
+        <div class="grp">
+          <p class="lbl">지역</p>
+          <select id="region"><option value="">선택 안 함</option></select>
+        </div>
+        <div class="grp">
+          <p class="lbl">대상 (복수 선택)</p>
+          <div class="chips" id="targets"></div>
+        </div>
+        <div class="grp">
+          <p class="lbl">관심 분야 (복수 선택)</p>
+          <div class="chips" id="interests"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="bar">
+      <input type="text" id="q" placeholder="사업명·키워드 검색 (예: 창업, 자금, 청년)" />
+      <div class="row">
+        <button class="tgl" id="matchBtn" disabled>내 맞춤만</button>
+        <button class="tgl dark" id="regionBtn">지역별 보기</button>
+        <label class="check"><input type="checkbox" id="hideExpired" checked /> 마감 제외</label>
+        <span class="count"><span id="count">10</span>건</span>
+      </div>
+    </div>
+
+    <div id="list"></div>
+  </div>
+
+  <footer><div class="in">데이터 출처: 기업마당(bizinfo.go.kr) · 1시간마다 갱신 · <b>디자인 미리보기(샘플 데이터)</b></div></footer>
+  <p class="note">※ 이 파일은 디자인 확인용 정적 미리보기입니다. 실제 서비스는 <code>npm run dev</code> → localhost:3000 에서 실시간 데이터로 작동합니다.</p>
+
+<script>
+  const REGION_OPTIONS=["서울","경기","인천","부산","대구","광주","대전","울산","세종","강원","충북","충남","전북","전남","경북","경남","제주"];
+  const TARGET_OPTIONS=["예비창업자","1인·개인기업","소상공인","중소기업","중견기업","청년"];
+  const INTEREST_OPTIONS=["창업","금융","기술","경영","인력","수출","내수"];
+  const CAT_DOT={창업:"var(--purple)",금융:"var(--sky)",기술:"var(--teal)",경영:"var(--orange)",인력:"var(--pink)",수출:"var(--green)",내수:"var(--brown)",기타:"var(--ink-faint)"};
+  const TARGET_KW={"예비창업자":["예비창업"],"1인·개인기업":["1인","개인"],"소상공인":["소상공인"],"중소기업":["중소기업"],"중견기업":["중견기업"],"청년":["청년"]};
+
+  // 샘플 데이터 (실제 기업마당 응답 형태를 본뜬 예시)
+  const DATA=[
+    {t:"[경북] 2026년 경영혁신 외식서비스 지원 사업 참가자 모집 변경 공고",cat:"경영",rgn:["경북"],org:"중소벤처기업부",target:"중소기업",end:"2026-07-16",sum:"경북 지역 외식서비스업 중소기업의 경영혁신을 지원합니다. 컨설팅·시제품·마케팅 패키지 제공."},
+    {t:"[대전] 2026년 BIC 대전글로벌게임센터 공동관 참가기업 모집 공고",cat:"창업",rgn:["대전"],org:"중소벤처기업부",target:"중소기업",end:"2026-07-14",sum:"대전 게임산업 스타트업 대상 국내외 전시 공동관 참가기업을 모집합니다."},
+    {t:"[강원] 관광·서비스업 소상공인 경영안정 자금 융자 지원",cat:"금융",rgn:["강원"],org:"강원특별자치도",target:"소상공인",end:"2026-07-12",sum:"강원 관광·서비스업 소상공인 대상 저리 융자. 업체당 최대 5천만원 지원."},
+    {t:"[부산] 지역 스타트업 R&D 전문인력 채용 지원 사업",cat:"인력",rgn:["부산"],org:"부산광역시",target:"중소기업",end:"2026-07-18",sum:"부산 소재 기술 스타트업의 R&D 인력 채용 인건비를 지원합니다."},
+    {t:"[전북] 2026년 특화역량 BI 지원사업 AI-R&D 부스팅 프로그램 참여기업 추가모집",cat:"기술",rgn:["전북"],org:"중소벤처기업부",target:"예비창업자",end:"2026-07-20",sum:"전북 예비창업자·초기기업 대상 AI 기반 R&D 사업화 부스팅 프로그램."},
+    {t:"[서울] 청년창업사관학교 추가 입교생 모집 공고",cat:"창업",rgn:["서울"],org:"중소벤처기업부",target:"청년 예비창업자",end:"2026-07-25",sum:"만 39세 이하 청년 예비창업자 대상. 사업화 자금 최대 1억원 및 창업 공간 제공."},
+    {t:"[충북] 제천시 2026년 천연물산업 혁신 프로젝트 수혜기업 모집 공고",cat:"경영",rgn:["충북"],org:"중소벤처기업부",target:"중소기업",end:"2026-07-16",sum:"제천시 천연물산업 및 전후방 산업 영위 중소기업 대상 프로그램별 지원."},
+    {t:"[경기] 2026년 중소기업 수출바우처 지원사업",cat:"수출",rgn:["경기"],org:"경기도",target:"중소기업",end:"2026-08-05",sum:"경기도 수출 중소기업 대상 해외마케팅 바우처. 업체당 최대 3천만원."},
+    {t:"[전국] 2026년 소상공인 온라인 판로지원 사업",cat:"내수",rgn:["전국"],org:"소상공인시장진흥공단",target:"소상공인",end:"2026-07-31",sum:"전국 소상공인 대상 온라인 쇼핑몰 입점·라이브커머스·상세페이지 제작 지원."},
+    {t:"1인 창조기업 마케팅 지원 상시 모집",cat:"금융",rgn:[],org:"창업진흥원",target:"1인 창조기업",end:null,sum:"1인 창조기업·개인 사업자 대상 마케팅 비용 상시 지원. 예산 소진 시 마감."}
+  ];
+
+  const state={q:"",hideExpired:true,byRegion:false,matchMine:false,region:"",targets:[],interests:[]};
+  const KEY="policyhub.preview.profile";
+  try{Object.assign(state,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
+
+  const $=s=>document.querySelector(s);
+  function saveProfile(){localStorage.setItem(KEY,JSON.stringify({region:state.region,targets:state.targets,interests:state.interests}))}
+  function profileSet(){return !!state.region||state.targets.length||state.interests.length}
+
+  function daysLeft(end){if(!end)return null;const e=new Date(end+"T23:59:59");return Math.ceil((e-new Date())/864e5)}
+  function match(p){
+    if(state.region&&p.rgn.length&&!p.rgn.includes(state.region)&&!p.rgn.includes("전국"))return false;
+    if(state.targets.length){const hay=p.target+" "+p.t+" "+p.sum;
+      if(!state.targets.some(t=>(TARGET_KW[t]||[t]).some(k=>hay.includes(k))))return false;}
+    if(state.interests.length&&!state.interests.includes(p.cat))return false;
+    return true;
+  }
+
+  function render(){
+    let list=DATA.filter(p=>{
+      if(state.matchMine&&profileSet()&&!match(p))return false;
+      if(state.hideExpired){const d=daysLeft(p.end);if(d!==null&&d<0)return false;}
+      if(state.q){const hay=(p.t+p.sum).toLowerCase();if(!hay.includes(state.q.toLowerCase()))return false;}
+      return true;
+    }).sort((a,b)=>{const da=daysLeft(a.end),db=daysLeft(b.end);
+      return (da===null||da<0?1e9:da)-(db===null||db<0?1e9:db)});
+
+    $("#count").textContent=list.length;
+    const el=$("#list");
+    if(!list.length){el.innerHTML='<p class="empty">조건에 맞는 지원사업이 없습니다.'+(state.matchMine?' 내 정보 조건을 넓혀보세요.':'')+'</p>';return;}
+
+    if(state.byRegion){
+      const order=[...REGION_OPTIONS,"전국","전국·공통"];const map={};
+      list.forEach(p=>{(p.rgn.length?p.rgn:["전국·공통"]).forEach(r=>{(map[r]=map[r]||[]).push(p)})});
+      el.innerHTML=Object.keys(map).sort((a,b)=>(order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b)))
+        .map(r=>`<section class="grpsec"><h2><span class="rtag">${r}</span><span class="rcnt">${map[r].length}건</span></h2><ul>${map[r].map(card).join("")}</ul></section>`).join("");
+    }else{
+      el.innerHTML=`<ul>${list.map(card).join("")}</ul>`;
+    }
+  }
+  function card(p){
+    const d=daysLeft(p.end);
+    const urgent=d!==null&&d>=0&&d<=5;
+    const dd=d===null?'<span class="dday none">상시·미정</span>':d<0?'<span class="dday none">마감</span>':urgent?`<span class="dday-badge">마감임박 D-${d}</span>`:`<span class="dday normal">D-${d}</span>`;
+    const period=p.end?`~ ${p.end}`:`상시`;
+    return `<li><a class="card${urgent?' urgent':''}" href="#">
+      <div class="meta">
+        <span class="cat"><span class="dot" style="background:${CAT_DOT[p.cat]||'var(--ink-faint)'}"></span>${p.cat}</span>
+        ${p.rgn.slice(0,2).map(r=>`<span class="rgn">${r}</span>`).join("")}
+        ${dd}
+      </div>
+      <h3>${p.t}</h3>
+      <p class="sum">${p.sum}</p>
+      <div class="foot"><span>${p.org}</span><span>대상 ${p.target}</span><span>${period}</span></div>
+    </a></li>`;
+  }
+
+  // 프로필 UI 구성
+  const regSel=$("#region");REGION_OPTIONS.forEach(r=>{const o=document.createElement("option");o.textContent=r;regSel.appendChild(o)});
+  regSel.value=state.region;
+  regSel.onchange=e=>{state.region=e.target.value;afterProfile()};
+  function buildChips(id,opts,key){const box=$(id);box.innerHTML="";opts.forEach(v=>{
+    const b=document.createElement("button");b.className="chip"+(state[key].includes(v)?" on":"");b.textContent=v;
+    b.onclick=()=>{state[key]=state[key].includes(v)?state[key].filter(x=>x!==v):[...state[key],v];buildChips(id,opts,key);afterProfile()};
+    box.appendChild(b)})}
+  buildChips("#targets",TARGET_OPTIONS,"targets");
+  buildChips("#interests",INTEREST_OPTIONS,"interests");
+
+  function afterProfile(){saveProfile();updateTagline();updateMatchBtn();render()}
+  function updateTagline(){const t=$("#tagline");const parts=[state.region,...state.interests].filter(Boolean).slice(0,3);
+    if(profileSet()){t.style.display="";t.textContent=parts.join(" · ")+(state.interests.length>2?" …":"")}else t.style.display="none"}
+  function updateMatchBtn(){const b=$("#matchBtn");b.disabled=!profileSet();
+    if(!profileSet())state.matchMine=false;b.classList.toggle("on",state.matchMine&&profileSet())}
+
+  $("#panelToggle").onclick=()=>{const p=$("#panel");p.classList.toggle("open");
+    $("#panelToggle .caret").textContent=p.classList.contains("open")?"▲":"▼"};
+  $("#q").oninput=e=>{state.q=e.target.value;render()};
+  $("#hideExpired").onchange=e=>{state.hideExpired=e.target.checked;render()};
+  $("#matchBtn").onclick=()=>{if(!profileSet())return;state.matchMine=!state.matchMine;updateMatchBtn();render()};
+  $("#regionBtn").onclick=()=>{state.byRegion=!state.byRegion;$("#regionBtn").classList.toggle("on",state.byRegion);render()};
+
+  // 초기화
+  if(profileSet())state.matchMine=true;
+  updateTagline();updateMatchBtn();render();
+</script>
+</body>
+</html>
