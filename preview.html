@@ -154,6 +154,7 @@
   <footer><div class="in">데이터 출처: 기업마당(bizinfo.go.kr) · 1시간마다 갱신 · <b>디자인 미리보기(샘플 데이터)</b></div></footer>
   <p class="note">※ 이 파일은 디자인 확인용 정적 미리보기입니다. 실제 서비스는 <code>npm run dev</code> → localhost:3000 에서 실시간 데이터로 작동합니다.</p>
 
+<script src="preview-data.js"></script>
 <script>
   const REGION_OPTIONS=["서울","경기","인천","부산","대구","광주","대전","울산","세종","강원","충북","충남","전북","전남","경북","경남","제주"];
   const TARGET_OPTIONS=["예비창업자","1인·개인기업","소상공인","중소기업","중견기업","청년"];
@@ -161,22 +162,7 @@
   const CAT_DOT={창업:"var(--purple)",금융:"var(--sky)",기술:"var(--teal)",경영:"var(--orange)",인력:"var(--pink)",수출:"var(--green)",내수:"var(--brown)",기타:"var(--ink-faint)"};
   const TARGET_KW={"예비창업자":["예비창업"],"1인·개인기업":["1인","개인"],"소상공인":["소상공인"],"중소기업":["중소기업"],"중견기업":["중견기업"],"청년":["청년"]};
 
-  // 샘플 데이터 (실제 기업마당 응답 형태를 본뜬 예시)
-  const DATA=[
-    {t:"[충북] 제천시 2026년 3차 지방소멸 대응을 위한 천연물산업 혁신 프로젝트 수혜기업 모집 공고(시군구연고산업육성사업 지원모집)",cat:"경영",rgn:["충북"],org:"중소벤처기업부",target:"중소기업",end:"2026-07-16",sum:"2026년 중소벤처기업부와 충청북도 및 제천시가 지원하는 시군구연고산업육성사업 수행자로 선정된 수행기관별 지원 프로그램을 안내하오니, 해당 프로그램 참여를 희망하…",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124201"},
-    {t:"2026년 콘텐츠 해외 투자유치 지원 프로그램 U-KNOCK 2026 in USA 참가기업 모집 공고",cat:"수출",rgn:["전국"],org:"문화체육관광부",target:"중소기업",end:"2026-07-29",sum:"한국콘텐츠진흥원에서「콘텐츠 해외 투자유치 지원 프로그램 U-KNOCK 2026 in USA」 참가기업 모집을 공고합니다. ☞ IP 해외사업 이력 보유 및 미국 또…",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124200"},
-    {t:"[충북] 2026년 2차 중소기업 산업보안 진단 컨설팅 모집 공고(산업기술단지 거점기능강화사업)",cat:"경영",rgn:["충북"],org:"중소벤처기업부",target:"중소기업",end:"2026-07-24",sum:"중소벤처기업부와 충청북도의 지원사업으로, 기술보안 인식 개선을 통한 기술 유출의 선제적 대응으로 기업 역량을 제고하기 위한 충북 중소기업 산업보안 진단 컨설팅을 …",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124199"},
-    {t:"2026년 녹색경영 우수기업 시상 공고",cat:"경영",rgn:["전국"],org:"기후에너지환경부",target:"중소기업",end:"2026-07-31",sum:"기후에너지환경부와 한국환경산업기술원은 녹색경영 활성화에 현저히 공헌한 기업ㆍ개인을 대상으로 다음과 같이「2026년 녹색경영 우수기업 시상」을 공모하오니 많은 참여…",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124198"},
-    {t:"[충남] 2026년 3차 정보보호 신규 비즈니스 모델 발굴 및 기업지원 모집 재공고(지역 거점 정보보호 클러스터 구축 사업)",cat:"창업",rgn:["충남"],org:"충청남도",target:"창업벤처",end:"2026-07-17",sum:"충남테크노파크에서는 충남 소재 지역특화산업 기업의 디지털전환 등 지역 ICT사업과 정보보호 클러스터 간 연계를 통한 정보보호 산업 생태계 구축과 지역 기업의 비즈…",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124197"},
-    {t:"[충남] 공주시 2026년 베트남 K-브랜드 EXPO 참가지원 참여기업 모집 공고(K-푸드 공주알밤 제품의 글로벌 사업)",cat:"수출",rgn:["충남"],org:"중소벤처기업부",target:"중소기업",end:"2026-07-14",sum:"2026년도 중소벤처기업부와 충남도 및 공주시가 지원하는 시군구 연고산업 육성사업(부처협업프로젝트) 수행자로 선정된 수행기관별 지원 프로그램을 안내하오니, 해당 …",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124194"},
-    {t:"[강원] 속초시 2026년 2차 전시박람회 참가 지원사업 참가기업 추가 모집 공고",cat:"내수",rgn:["강원"],org:"강원특별자치도",target:"중소기업",end:null,sum:"속초시 관내 중소기업의 제품 홍보 및 판로 확대를 위하여 추진하는「2026년 속초시 전시박람회 참가 지원사업」의 참가기업을 아래와 같이 추가 모집하오니 많은 신청…",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124193"},
-    {t:"[제주] 서귀포시 2026년 4차 방문객을 위한 지능형 여행지원산업 기업지원프로그램 수혜기업 모집 공고",cat:"경영",rgn:["제주"],org:"중소벤처기업부",target:"중소기업",end:"2026-07-20",sum:"2026년도 중소벤처기업부와 제주특별자치도가 지원하는 시군구 연고산업 육성사업(제주) 지원프로그램을 안내드리오니, 서귀포 지능형 여행지원산업 관련 중소기업의 많은…",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124192"},
-    {t:"[제주] 지역 AI 대전환을 위한 바이오 기업 AI 솔루션 활용 지원사업 PoC 모집 공고",cat:"기술",rgn:["제주"],org:"제주특별자치도",target:"중소기업",end:"2026-07-22",sum:"제주테크노파크에서는 인공지능(AI)를 활용하여 제주지역 바이오 분야의 AI도입과 생태계 조성을 위해 「바이오 기업 AI솔루션 활용 PoC 지원사업」을 다음과 같이…",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124191"},
-    {t:"[경남] 2026년 2차 사회연대경제 청년 일경험사업 참여 기업 추가 모집 공고",cat:"인력",rgn:["경남"],org:"경상남도",target:"사회적기업",end:null,sum:"경상남도와 경상남도투자경제진흥원은 도내 거주하는 미취업 청년에게 사회연대경제 분야 일경험 기회를 제공하기 위하여 2026년「사회연대경제 청년일경험사업」참여 기업을…",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124190"},
-    {t:"[경북] 경산시 2026년 2차 생활소비재 융복합산업 글로벌마케팅 지원사업 수혜기업 모집 공고",cat:"수출",rgn:["경북"],org:"경상북도",target:"중소기업",end:"2026-07-28",sum:"2026년도 경상북도와 경산시에서 지원하는 해외 마케팅 지원사업「2026년 생활소비재 융복합산업 해외 마케팅 지원사업」의 공고를 다음과 같이 진행하오니 참여를 희…",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124189"},
-    {t:"[전남광주] 여수시 2026년 2차 석유화학산업 고용위기 대응 기업지원사업 모집 공고",cat:"인력",rgn:[],org:"전남광주통합특별시",target:"중소기업",end:"2026-07-31",sum:"전남광주통합특별시 지역주도형 일자리사업 「여수 석유화학산업 고용위기 대응 기업지원사업」의 참여기업을 아래와 같이 모집합니다. ☞ 여수시 소재 본사 …",url:"https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124188"}
-  ];
-
+  // 공고 데이터는 preview-data.js 에서 로드 (기업마당 실데이터 100건)
   const state={q:"",hideExpired:true,byRegion:false,matchMine:false,region:"",targets:[],interests:[]};
   const KEY="policyhub.preview.profile";
   try{Object.assign(state,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
