@@ -116,28 +116,17 @@ function Card({ p }: { p: Policy }) {
   );
 }
 
-// 지역별 그룹핑
-function groupByRegion(list: Policy[]) {
-  const map = new Map<string, Policy[]>();
-  for (const p of list) {
-    const keys = p.regions.length ? p.regions : ["전국·공통"];
-    for (const k of keys) {
-      if (!map.has(k)) map.set(k, []);
-      map.get(k)!.push(p);
-    }
-  }
-  const order = [...REGION_OPTIONS, "전국", "전국·공통"];
-  return [...map.entries()].sort(
-    (a, b) =>
-      (order.indexOf(a[0]) === -1 ? 99 : order.indexOf(a[0])) -
-      (order.indexOf(b[0]) === -1 ? 99 : order.indexOf(b[0]))
-  );
+// 정책이 속한 지역 키 (지역 태그 없으면 전국·공통)
+const REGION_ORDER = [...REGION_OPTIONS, "전국", "전국·공통"];
+function policyRegions(p: Policy): string[] {
+  return p.regions.length ? p.regions : ["전국·공통"];
 }
 
 export default function PolicyList({ policies }: { policies: Policy[] }) {
   const [q, setQ] = useState("");
   const [hideExpired, setHideExpired] = useState(true);
-  const [byRegion, setByRegion] = useState(false);
+  const [regionMode, setRegionMode] = useState(false);
+  const [regionFilter, setRegionFilter] = useState("");
   const [showProfile, setShowProfile] = useState(false);
 
   // 프로필 (localStorage 연동)
@@ -157,7 +146,8 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
       [key]: p[key].includes(v) ? p[key].filter((x) => x !== v) : [...p[key], v],
     }));
 
-  const filtered = useMemo(() => {
+  // 지역 필터를 제외한 나머지 필터 적용 (지역 버튼 카운트의 기준)
+  const base = useMemo(() => {
     const kw = q.trim().toLowerCase();
     return policies
       .filter((p) => {
@@ -181,7 +171,23 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
       });
   }, [policies, q, hideExpired, profile]);
 
-  const grouped = useMemo(() => groupByRegion(filtered), [filtered]);
+  // 지역별 건수 (버튼용)
+  const regionButtons = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of base)
+      for (const r of policyRegions(p)) counts[r] = (counts[r] ?? 0) + 1;
+    return REGION_ORDER.filter((r) => counts[r]).map((r) => ({ r, n: counts[r] }));
+  }, [base]);
+
+  // 선택 지역 적용
+  const visible = useMemo(
+    () =>
+      regionFilter
+        ? base.filter((p) => policyRegions(p).includes(regionFilter))
+        : base,
+    [base, regionFilter]
+  );
+
   const profileSet = isProfileSet(profile);
 
   return (
@@ -259,9 +265,12 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
         />
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <button
-            onClick={() => setByRegion((v) => !v)}
+            onClick={() => {
+              setRegionMode((v) => !v);
+              setRegionFilter("");
+            }}
             className={`rounded-lg px-3 py-1.5 font-medium transition ${
-              byRegion
+              regionMode
                 ? "bg-ink text-surface"
                 : "border border-hairline bg-surface text-ink-muted"
             }`}
@@ -277,40 +286,59 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
             />
             마감 제외
           </label>
-          <span className="ml-auto text-ink-faint">{filtered.length}건</span>
+          <span className="ml-auto text-ink-faint">{visible.length}건</span>
         </div>
+
+        {/* 지역 버튼 바 */}
+        {regionMode && (
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-hairline pt-3">
+            <button
+              onClick={() => setRegionFilter("")}
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                regionFilter === ""
+                  ? "bg-primary text-on-primary"
+                  : "border border-hairline bg-surface text-ink-muted hover:border-primary/40"
+              }`}
+            >
+              전체 {base.length}
+            </button>
+            {regionButtons.map(({ r, n }) => (
+              <button
+                key={r}
+                onClick={() => setRegionFilter(r)}
+                className={`rounded-full px-3 py-1 text-sm transition ${
+                  regionFilter === r
+                    ? "bg-primary text-on-primary"
+                    : "border border-hairline bg-surface text-ink-muted hover:border-primary/40"
+                }`}
+              >
+                {r} {n}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* 목록 */}
-      {byRegion ? (
-        <div className="space-y-8">
-          {grouped.map(([region, items]) => (
-            <section key={region}>
-              <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-ink">
-                <span className="rounded-md bg-primary px-2 py-0.5 text-sm text-on-primary">{region}</span>
-                <span className="text-sm font-normal text-ink-faint">{items.length}건</span>
-              </h2>
-              <ul className="space-y-3">
-                {items.map((p) => (
-                  <li key={p.id + region}>
-                    <Card p={p} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {filtered.map((p) => (
-            <li key={p.id}>
-              <Card p={p} />
-            </li>
-          ))}
-        </ul>
+      {/* 선택 지역 표시 */}
+      {regionMode && regionFilter && (
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-ink">
+          <span className="rounded-md bg-primary px-2 py-0.5 text-sm text-on-primary">
+            {regionFilter}
+          </span>
+          <span className="text-sm font-normal text-ink-faint">{visible.length}건</span>
+        </h2>
       )}
 
-      {filtered.length === 0 && (
+      {/* 목록 */}
+      <ul className="space-y-3">
+        {visible.map((p) => (
+          <li key={p.id}>
+            <Card p={p} />
+          </li>
+        ))}
+      </ul>
+
+      {visible.length === 0 && (
         <p className="py-16 text-center text-ink-faint">
           조건에 맞는 지원사업이 없습니다.
           {profileSet && " 내 정보 조건을 넓혀보세요."}

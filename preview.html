@@ -62,6 +62,13 @@
   .tgl.dark.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .tgl:disabled{opacity:.4;cursor:not-allowed}
   .count{margin-left:auto;color:var(--ink-faint)}
+  .regionbar{flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--hairline)}
+  .rbtn{border:1px solid var(--hairline);background:var(--surface);color:var(--ink-muted);border-radius:9999px;padding:4px 12px;font:inherit;font-size:14px;cursor:pointer;transition:.15s}
+  .rbtn:hover{border-color:rgba(0,117,222,.4)}
+  .rbtn.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .selhead{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:18px;font-weight:700}
+  .selhead .rtag{border-radius:6px;background:var(--primary);color:#fff;padding:2px 8px;font-size:14px}
+  .selhead .rcnt{font-size:14px;font-weight:400;color:var(--ink-faint)}
   .check{display:flex;align-items:center;gap:6px;color:var(--ink-muted);cursor:pointer}
   .check input{accent-color:var(--primary)}
 
@@ -144,6 +151,7 @@
         <label class="check"><input type="checkbox" id="hideExpired" checked /> 마감 제외</label>
         <span class="count"><span id="count">10</span>건</span>
       </div>
+      <div class="regionbar" id="regionBar" style="display:none"></div>
     </div>
 
     <div id="list"></div>
@@ -161,7 +169,7 @@
   const TARGET_KW={"예비창업자":["예비창업"],"1인·개인기업":["1인","개인"],"소상공인":["소상공인"],"중소기업":["중소기업"],"중견기업":["중견기업"],"청년":["청년"]};
 
   // 공고 데이터는 preview-data.js 에서 로드 (기업마당 실데이터 100건)
-  const state={q:"",hideExpired:true,byRegion:false,region:"",targets:[],interests:[]};
+  const state={q:"",hideExpired:true,regionMode:false,regionFilter:"",region:"",targets:[],interests:[]};
   const KEY="policyhub.preview.profile";
   try{Object.assign(state,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
 
@@ -178,27 +186,40 @@
     return true;
   }
 
-  function render(){
-    let list=DATA.filter(p=>{
+  const REGION_ORDER=[...REGION_OPTIONS,"전국","전국·공통"];
+  function policyRegions(p){return p.rgn.length?p.rgn:["전국·공통"]}
+
+  function baseList(){
+    const kw=state.q.trim().toLowerCase();
+    return DATA.filter(p=>{
       if(profileSet()&&!match(p))return false;
       if(state.hideExpired){const d=daysLeft(p.end);if(d!==null&&d<0)return false;}
-      if(state.q){const hay=(p.t+p.sum).toLowerCase();if(!hay.includes(state.q.toLowerCase()))return false;}
+      if(kw){const hay=(p.t+p.sum).toLowerCase();if(!hay.includes(kw))return false;}
       return true;
     }).sort((a,b)=>{const da=daysLeft(a.end),db=daysLeft(b.end);
       return (da===null||da<0?1e9:da)-(db===null||db<0?1e9:db)});
+  }
 
+  function renderRegionBar(base){
+    const bar=$("#regionBar");
+    if(!state.regionMode){bar.style.display="none";bar.innerHTML="";return;}
+    bar.style.display="flex";
+    const counts={};base.forEach(p=>policyRegions(p).forEach(r=>counts[r]=(counts[r]||0)+1));
+    const btns=['<button class="rbtn'+(state.regionFilter===""?" on":"")+'" data-r="">전체 '+base.length+'</button>']
+      .concat(REGION_ORDER.filter(r=>counts[r]).map(r=>'<button class="rbtn'+(state.regionFilter===r?" on":"")+'" data-r="'+r+'">'+r+' '+counts[r]+'</button>'));
+    bar.innerHTML=btns.join("");
+    bar.querySelectorAll(".rbtn").forEach(b=>b.onclick=()=>{state.regionFilter=b.dataset.r;render()});
+  }
+
+  function render(){
+    const base=baseList();
+    renderRegionBar(base);
+    const list=state.regionFilter?base.filter(p=>policyRegions(p).includes(state.regionFilter)):base;
     $("#count").textContent=list.length;
     const el=$("#list");
-    if(!list.length){el.innerHTML='<p class="empty">조건에 맞는 지원사업이 없습니다.'+(profileSet()?' 내 정보 조건을 넓혀보세요.':'')+'</p>';return;}
-
-    if(state.byRegion){
-      const order=[...REGION_OPTIONS,"전국","전국·공통"];const map={};
-      list.forEach(p=>{(p.rgn.length?p.rgn:["전국·공통"]).forEach(r=>{(map[r]=map[r]||[]).push(p)})});
-      el.innerHTML=Object.keys(map).sort((a,b)=>(order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b)))
-        .map(r=>`<section class="grpsec"><h2><span class="rtag">${r}</span><span class="rcnt">${map[r].length}건</span></h2><ul>${map[r].map(card).join("")}</ul></section>`).join("");
-    }else{
-      el.innerHTML=`<ul>${list.map(card).join("")}</ul>`;
-    }
+    const head=(state.regionMode&&state.regionFilter)?'<h2 class="selhead"><span class="rtag">'+state.regionFilter+'</span><span class="rcnt">'+list.length+'건</span></h2>':"";
+    if(!list.length){el.innerHTML=head+'<p class="empty">조건에 맞는 지원사업이 없습니다.'+(profileSet()?' 내 정보 조건을 넓혀보세요.':'')+'</p>';return;}
+    el.innerHTML=head+'<ul>'+list.map(card).join("")+'</ul>';
   }
   function card(p){
     const d=daysLeft(p.end);
@@ -236,7 +257,7 @@
     $("#panelToggle .caret").textContent=p.classList.contains("open")?"▲":"▼"};
   $("#q").oninput=e=>{state.q=e.target.value;render()};
   $("#hideExpired").onchange=e=>{state.hideExpired=e.target.checked;render()};
-  $("#regionBtn").onclick=()=>{state.byRegion=!state.byRegion;$("#regionBtn").classList.toggle("on",state.byRegion);render()};
+  $("#regionBtn").onclick=()=>{state.regionMode=!state.regionMode;state.regionFilter="";$("#regionBtn").classList.toggle("on",state.regionMode);render()};
 
   // 초기화
   updateTagline();render();
