@@ -52,7 +52,9 @@ function normalize(item: Record<string, unknown>): Policy {
     .split(/[,\s]+/)
     .map((t) => t.trim())
     .filter(Boolean);
-  const regions = [...new Set(tags.filter((t) => REGIONS.includes(t)))];
+  let regions = [...new Set(tags.filter((t) => REGIONS.includes(t)))];
+  // 지역이 8곳 이상 붙은 공고는 사실상 전국 대상 → '전국'으로 정리
+  if (regions.filter((r) => r !== "전국").length >= 8) regions = ["전국"];
   const period = s(item.reqstBeginEndDe);
 
   return {
