@@ -51,17 +51,18 @@ export default async function Home() {
         </div>
 
         <div className="relative mx-auto max-w-3xl px-4 py-16 sm:py-20">
-          <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold tracking-[0.01em] text-white/90 ring-1 ring-white/15">
-            매일 자동 갱신 · 총 {policies.length}건
-          </span>
-          <h1 className="mt-5 text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
+          <h1 className="text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
             정부지원사업,
             <br />
             흩어진 공고를 한 곳에서
           </h1>
-          <p className="mt-4 max-w-lg text-base leading-relaxed text-white/70">
-            전국 지원사업을 모아 마감임박순으로 정리했어요. 내 정보를 넣으면
-            나에게 해당되는 것만 골라 보여드립니다.
+          <p className="mt-5 max-w-lg text-base leading-relaxed text-white/70">
+            전국 지원사업을 모아 마감임박순으로 정리했어요.
+            <br />
+            <span className="mt-1 inline-block text-lg font-semibold text-white">
+              내 정보를 넣으면 <span className="text-accent-sky">맞춤 정책</span>을
+              찾아드립니다.
+            </span>
           </p>
         </div>
       </section>

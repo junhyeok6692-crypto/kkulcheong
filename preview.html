@@ -28,7 +28,9 @@
     padding:4px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.9);
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
   .hero h1{margin:20px 0 0;font-size:44px;line-height:1.05;letter-spacing:-.03em;font-weight:700}
-  .hero p{margin:16px 0 0;max-width:460px;font-size:16px;line-height:1.6;color:rgba(255,255,255,.7)}
+  .hero p{margin:20px 0 0;max-width:460px;font-size:16px;line-height:1.6;color:rgba(255,255,255,.7)}
+  .hero p .hl{display:inline-block;margin-top:4px;font-size:18px;font-weight:600;color:#fff}
+  .hero p .hl b{color:var(--sky);font-weight:600}
   @media(max-width:600px){.hero h1{font-size:34px}}
 
   /* Profile panel */
@@ -106,9 +108,8 @@
       <span style="top:48%;left:48%;width:6px;height:6px;background:var(--green)"></span>
     </div>
     <div class="inner">
-      <span class="badge">매일 자동 갱신 · 총 <span id="total">10</span>건</span>
       <h1>정부지원사업,<br />흩어진 공고를 한 곳에서</h1>
-      <p>전국 지원사업을 모아 마감임박순으로 정리했어요. 내 정보를 넣으면 나에게 해당되는 것만 골라 보여드립니다.</p>
+      <p>전국 지원사업을 모아 마감임박순으로 정리했어요.<br /><span class="hl">내 정보를 넣으면 <b>맞춤 정책</b>을 찾아드립니다.</span></p>
     </div>
   </section>
 
@@ -218,7 +219,7 @@
     const urgent=d!==null&&d>=0&&d<=5;
     const dd=d===null?'<span class="dday none">상시·미정</span>':d<0?'<span class="dday none">마감</span>':urgent?`<span class="dday-badge">마감임박 D-${d}</span>`:`<span class="dday normal">D-${d}</span>`;
     const period=p.end?`~ ${p.end}`:`상시`;
-    return `<li><a class="card${urgent?' urgent':''}" href="#">
+    return `<li><a class="card${urgent?' urgent':''}" href="${p.url||'https://www.bizinfo.go.kr/web/index.do'}" target="_blank" rel="noopener noreferrer">
       <div class="meta">
         <span class="cat"><span class="dot" style="background:${CAT_DOT[p.cat]||'var(--ink-faint)'}"></span>${p.cat}</span>
         ${p.rgn.slice(0,2).map(r=>`<span class="rgn">${r}</span>`).join("")}
