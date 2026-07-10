@@ -118,9 +118,16 @@ function Card({ p }: { p: Policy }) {
 
 // 정책이 속한 지역 키 (지역 태그 없으면 전국·공통)
 const REGION_ORDER = [...REGION_OPTIONS, "전국", "전국·공통"];
+const NATIONWIDE = ["전국", "전국·공통"];
 function policyRegions(p: Policy): string[] {
   return p.regions.length ? p.regions : ["전국·공통"];
 }
+const regionBtnCls = (active: boolean) =>
+  `rounded-full px-3 py-1 text-sm transition ${
+    active
+      ? "bg-primary text-on-primary"
+      : "border border-hairline bg-surface text-ink-muted hover:border-primary/40"
+  }`;
 
 export default function PolicyList({ policies }: { policies: Policy[] }) {
   const [q, setQ] = useState("");
@@ -291,30 +298,30 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
 
         {/* 지역 버튼 바 */}
         {regionMode && (
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-hairline pt-3">
-            <button
-              onClick={() => setRegionFilter("")}
-              className={`rounded-full px-3 py-1 text-sm transition ${
-                regionFilter === ""
-                  ? "bg-primary text-on-primary"
-                  : "border border-hairline bg-surface text-ink-muted hover:border-primary/40"
-              }`}
-            >
-              전체 {base.length}
-            </button>
-            {regionButtons.map(({ r, n }) => (
-              <button
-                key={r}
-                onClick={() => setRegionFilter(r)}
-                className={`rounded-full px-3 py-1 text-sm transition ${
-                  regionFilter === r
-                    ? "bg-primary text-on-primary"
-                    : "border border-hairline bg-surface text-ink-muted hover:border-primary/40"
-                }`}
-              >
-                {r} {n}
+          <div className="mt-3 flex flex-col gap-2 border-t border-hairline pt-3">
+            {/* 윗줄: 전체 · 전국 · 전국·공통 */}
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setRegionFilter("")} className={regionBtnCls(regionFilter === "")}>
+                전체 {base.length}
               </button>
-            ))}
+              {regionButtons
+                .filter(({ r }) => NATIONWIDE.includes(r))
+                .map(({ r, n }) => (
+                  <button key={r} onClick={() => setRegionFilter(r)} className={regionBtnCls(regionFilter === r)}>
+                    {r} {n}
+                  </button>
+                ))}
+            </div>
+            {/* 아랫줄: 시·도 */}
+            <div className="flex flex-wrap gap-2">
+              {regionButtons
+                .filter(({ r }) => REGION_OPTIONS.includes(r))
+                .map(({ r, n }) => (
+                  <button key={r} onClick={() => setRegionFilter(r)} className={regionBtnCls(regionFilter === r)}>
+                    {r} {n}
+                  </button>
+                ))}
+            </div>
           </div>
         )}
       </div>

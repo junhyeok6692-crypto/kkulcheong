@@ -62,7 +62,8 @@
   .tgl.dark.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .tgl:disabled{opacity:.4;cursor:not-allowed}
   .count{margin-left:auto;color:var(--ink-faint)}
-  .regionbar{flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--hairline)}
+  .regionbar{flex-direction:column;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--hairline)}
+  .rrow{display:flex;flex-wrap:wrap;gap:8px}
   .rbtn{border:1px solid var(--hairline);background:var(--surface);color:var(--ink-muted);border-radius:9999px;padding:4px 12px;font:inherit;font-size:14px;cursor:pointer;transition:.15s}
   .rbtn:hover{border-color:rgba(0,117,222,.4)}
   .rbtn.on{background:var(--primary);border-color:var(--primary);color:#fff}
@@ -205,9 +206,13 @@
     if(!state.regionMode){bar.style.display="none";bar.innerHTML="";return;}
     bar.style.display="flex";
     const counts={};base.forEach(p=>policyRegions(p).forEach(r=>counts[r]=(counts[r]||0)+1));
-    const btns=['<button class="rbtn'+(state.regionFilter===""?" on":"")+'" data-r="">전체 '+base.length+'</button>']
-      .concat(REGION_ORDER.filter(r=>counts[r]).map(r=>'<button class="rbtn'+(state.regionFilter===r?" on":"")+'" data-r="'+r+'">'+r+' '+counts[r]+'</button>'));
-    bar.innerHTML=btns.join("");
+    const mk=(r,label,n)=>'<button class="rbtn'+(state.regionFilter===r?" on":"")+'" data-r="'+r+'">'+label+' '+n+'</button>';
+    // 윗줄: 전체 · 전국 · 전국·공통
+    const top=[mk("","전체",base.length)];
+    ["전국","전국·공통"].forEach(r=>{if(counts[r])top.push(mk(r,r,counts[r]))});
+    // 아랫줄: 시·도
+    const sido=REGION_OPTIONS.filter(r=>counts[r]).map(r=>mk(r,r,counts[r]));
+    bar.innerHTML='<div class="rrow">'+top.join("")+'</div>'+(sido.length?'<div class="rrow">'+sido.join("")+'</div>':"");
     bar.querySelectorAll(".rbtn").forEach(b=>b.onclick=()=>{state.regionFilter=b.dataset.r;render()});
   }
 
