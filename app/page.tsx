@@ -51,9 +51,15 @@ export default async function Home() {
         </div>
 
         <div className="relative mx-auto max-w-3xl px-4 py-16 sm:py-20">
-          <div className="mb-6 text-xl font-extrabold tracking-tight text-[#92600a]">
-            꿀청
-          </div>
+          <a href="/" className="mb-6 inline-block" aria-label="꿀청 홈">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="꿀청"
+              className="h-11 w-auto"
+              style={{ filter: "drop-shadow(0 1px 2px rgba(80,55,0,0.3))" }}
+            />
+          </a>
           <h1 className="text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
             정부지원사업,
             <br />
