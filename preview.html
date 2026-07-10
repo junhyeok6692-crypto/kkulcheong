@@ -62,6 +62,13 @@
   .tgl.dark.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .tgl:disabled{opacity:.4;cursor:not-allowed}
   .count{margin-left:auto;color:var(--ink-faint)}
+  .pp-select{border:1px solid var(--hairline);background:var(--surface);color:var(--ink-muted);border-radius:8px;padding:4px 8px;font:inherit;font-size:14px}
+  .pager{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:32px}
+  .pbtn{border:1px solid var(--hairline);background:var(--surface);color:var(--ink-muted);border-radius:8px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer;min-width:38px}
+  .pbtn:hover{border-color:rgba(0,117,222,.4)}
+  .pbtn.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .pbtn:disabled{opacity:.4;cursor:default}
+  .pdots{padding:0 6px;color:var(--ink-faint)}
   .regionbar{flex-direction:column;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--hairline)}
   .rrow{display:flex;flex-wrap:wrap;gap:8px}
   .rbtn{border:1px solid var(--hairline);background:var(--surface);color:var(--ink-muted);border-radius:9999px;padding:4px 12px;font:inherit;font-size:14px;cursor:pointer;transition:.15s}
@@ -114,7 +121,7 @@
       <span style="top:48%;left:48%;width:6px;height:6px;background:var(--green)"></span>
     </div>
     <div class="inner">
-      <a href="preview.html" aria-label="꿀청 홈"><img class="brandimg" src="public/logo.png" alt="꿀청" /></a>
+      <a href="preview.html" aria-label="꿀청 홈"><img class="brandimg" src="public/logo-v2.png" alt="꿀청" /></a>
       <h1>정부지원사업,<br />흩어진 공고를 한 곳에서</h1>
       <p>전국 지원사업을 모아 마감임박순으로 정리했어요.<br /><span class="hl">내 정보를 넣으면 <b>맞춤 정책</b>을 찾아드립니다.</span></p>
     </div>
@@ -151,11 +158,18 @@
         <button class="tgl dark" id="regionBtn">지역별 보기</button>
         <label class="check"><input type="checkbox" id="hideExpired" checked /> 마감 제외</label>
         <span class="count"><span id="count">10</span>건</span>
+        <select id="perPage" class="pp-select">
+          <option value="10">10개씩</option>
+          <option value="25">25개씩</option>
+          <option value="50">50개씩</option>
+          <option value="100">100개씩</option>
+        </select>
       </div>
       <div class="regionbar" id="regionBar" style="display:none"></div>
     </div>
 
     <div id="list"></div>
+    <div class="pager" id="pager"></div>
   </div>
 
   <footer><div class="in"><b>꿀청</b> · 데이터 출처: 기업마당(bizinfo.go.kr) · 미리보기(실데이터 스냅샷)</div></footer>
@@ -170,7 +184,7 @@
   const TARGET_KW={"예비창업자":["예비창업"],"1인·개인기업":["1인","개인"],"소상공인":["소상공인"],"중소기업":["중소기업"],"중견기업":["중견기업"],"청년":["청년"]};
 
   // 공고 데이터는 preview-data.js 에서 로드 (기업마당 실데이터 100건)
-  const state={q:"",hideExpired:true,regionMode:false,regionFilter:"",region:"",targets:[],interests:[]};
+  const state={q:"",hideExpired:true,regionMode:false,regionFilter:"",perPage:10,page:1,region:"",targets:[],interests:[]};
   const KEY="policyhub.preview.profile";
   try{Object.assign(state,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
 
@@ -213,7 +227,7 @@
     // 아랫줄: 시·도
     const sido=REGION_OPTIONS.filter(r=>counts[r]).map(r=>mk(r,r,counts[r]));
     bar.innerHTML='<div class="rrow">'+top.join("")+'</div>'+(sido.length?'<div class="rrow">'+sido.join("")+'</div>':"");
-    bar.querySelectorAll(".rbtn").forEach(b=>b.onclick=()=>{state.regionFilter=b.dataset.r;render()});
+    bar.querySelectorAll(".rbtn").forEach(b=>b.onclick=()=>{state.regionFilter=b.dataset.r;state.page=1;render()});
   }
 
   function render(){
@@ -223,8 +237,24 @@
     $("#count").textContent=list.length;
     const el=$("#list");
     const head=(state.regionMode&&state.regionFilter)?'<h2 class="selhead"><span class="rtag">'+state.regionFilter+'</span><span class="rcnt">'+list.length+'건</span></h2>':"";
-    if(!list.length){el.innerHTML=head+'<p class="empty">조건에 맞는 지원사업이 없습니다.'+(profileSet()?' 내 정보 조건을 넓혀보세요.':'')+'</p>';return;}
-    el.innerHTML=head+'<ul>'+list.map(card).join("")+'</ul>';
+    if(!list.length){el.innerHTML=head+'<p class="empty">조건에 맞는 지원사업이 없습니다.'+(profileSet()?' 내 정보 조건을 넓혀보세요.':'')+'</p>';$("#pager").innerHTML="";return;}
+    const pc=Math.max(1,Math.ceil(list.length/state.perPage));
+    if(state.page>pc)state.page=pc;
+    const start=(state.page-1)*state.perPage;
+    const items=list.slice(start,start+state.perPage);
+    el.innerHTML=head+'<ul>'+items.map(card).join("")+'</ul>';
+    renderPager(pc);
+  }
+  function renderPager(pc){
+    const el=$("#pager");
+    if(pc<=1){el.innerHTML="";return;}
+    const cur=state.page, nums=[];
+    for(let i=1;i<=pc;i++){ if(i===1||i===pc||Math.abs(i-cur)<=2)nums.push(i); else if(nums[nums.length-1]!=='…')nums.push('…'); }
+    let html='<button class="pbtn" data-p="'+(cur-1)+'"'+(cur===1?' disabled':'')+'>이전</button>';
+    html+=nums.map(n=>n==='…'?'<span class="pdots">…</span>':'<button class="pbtn'+(n===cur?' on':'')+'" data-p="'+n+'">'+n+'</button>').join("");
+    html+='<button class="pbtn" data-p="'+(cur+1)+'"'+(cur===pc?' disabled':'')+'>다음</button>';
+    el.innerHTML=html;
+    el.querySelectorAll('.pbtn').forEach(b=>{ if(b.disabled)return; b.onclick=()=>{ state.page=Math.min(Math.max(1,Number(b.dataset.p)),pc); render(); window.scrollTo({top:0,behavior:'smooth'}); }; });
   }
   function card(p){
     const d=daysLeft(p.end);
@@ -254,15 +284,16 @@
   buildChips("#targets",TARGET_OPTIONS,"targets");
   buildChips("#interests",INTEREST_OPTIONS,"interests");
 
-  function afterProfile(){saveProfile();updateTagline();render()}
+  function afterProfile(){saveProfile();updateTagline();state.page=1;render()}
   function updateTagline(){const t=$("#tagline");const parts=[state.region,...state.interests].filter(Boolean).slice(0,3);
     if(profileSet()){t.style.display="";t.textContent=parts.join(" · ")+(state.interests.length>2?" …":"")}else t.style.display="none"}
 
   $("#panelToggle").onclick=()=>{const p=$("#panel");p.classList.toggle("open");
     $("#panelToggle .caret").textContent=p.classList.contains("open")?"▲":"▼"};
-  $("#q").oninput=e=>{state.q=e.target.value;render()};
-  $("#hideExpired").onchange=e=>{state.hideExpired=e.target.checked;render()};
-  $("#regionBtn").onclick=()=>{state.regionMode=!state.regionMode;state.regionFilter="";$("#regionBtn").classList.toggle("on",state.regionMode);render()};
+  $("#q").oninput=e=>{state.q=e.target.value;state.page=1;render()};
+  $("#hideExpired").onchange=e=>{state.hideExpired=e.target.checked;state.page=1;render()};
+  $("#perPage").onchange=e=>{state.perPage=Number(e.target.value);state.page=1;render()};
+  $("#regionBtn").onclick=()=>{state.regionMode=!state.regionMode;state.regionFilter="";state.page=1;$("#regionBtn").classList.toggle("on",state.regionMode);render()};
 
   // 초기화
   updateTagline();render();

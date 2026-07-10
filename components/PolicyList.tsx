@@ -135,6 +135,8 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
   const [regionMode, setRegionMode] = useState(false);
   const [regionFilter, setRegionFilter] = useState("");
   const [showProfile, setShowProfile] = useState(false);
+  const [perPage, setPerPage] = useState(10);
+  const [page, setPage] = useState(1);
 
   // 프로필 (localStorage 연동)
   const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
@@ -146,6 +148,10 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
   useEffect(() => {
     if (loaded) saveProfile(profile);
   }, [profile, loaded]);
+  // 필터/페이지 크기가 바뀌면 1페이지로 초기화
+  useEffect(() => {
+    setPage(1);
+  }, [q, hideExpired, profile, regionFilter, perPage]);
 
   const toggle = (key: "targets" | "interests", v: string) =>
     setProfile((p) => ({
@@ -196,6 +202,21 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
   );
 
   const profileSet = isProfileSet(profile);
+
+  // 페이지네이션
+  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
+  const curPage = Math.min(page, pageCount);
+  const paged = visible.slice((curPage - 1) * perPage, curPage * perPage);
+  const goPage = (n: number) => {
+    setPage(Math.min(Math.max(1, n), pageCount));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  // 표시할 페이지 번호(현재 주변 + 처음/끝)
+  const pageNums: (number | "…")[] = [];
+  for (let i = 1; i <= pageCount; i++) {
+    if (i === 1 || i === pageCount || Math.abs(i - curPage) <= 2) pageNums.push(i);
+    else if (pageNums[pageNums.length - 1] !== "…") pageNums.push("…");
+  }
 
   return (
     <div>
@@ -293,7 +314,21 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
             />
             마감 제외
           </label>
-          <span className="ml-auto text-ink-faint">{visible.length}건</span>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-ink-faint">{visible.length}건</span>
+            <select
+              value={perPage}
+              onChange={(e) => setPerPage(Number(e.target.value))}
+              className="rounded-lg border border-hairline bg-surface px-2 py-1 text-ink-muted"
+              aria-label="페이지당 개수"
+            >
+              {[10, 25, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}개씩
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* 지역 버튼 바 */}
@@ -338,7 +373,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
 
       {/* 목록 */}
       <ul className="space-y-3">
-        {visible.map((p) => (
+        {paged.map((p) => (
           <li key={p.id}>
             <Card p={p} />
           </li>
@@ -350,6 +385,45 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
           조건에 맞는 지원사업이 없습니다.
           {profileSet && " 내 정보 조건을 넓혀보세요."}
         </p>
+      )}
+
+      {/* 페이지네이션 */}
+      {pageCount > 1 && (
+        <nav className="mt-8 flex items-center justify-center gap-1 text-sm">
+          <button
+            onClick={() => goPage(curPage - 1)}
+            disabled={curPage === 1}
+            className="rounded-lg border border-hairline bg-surface px-3 py-1.5 text-ink-muted disabled:opacity-40"
+          >
+            이전
+          </button>
+          {pageNums.map((n, i) =>
+            n === "…" ? (
+              <span key={`e${i}`} className="px-2 text-ink-faint">
+                …
+              </span>
+            ) : (
+              <button
+                key={n}
+                onClick={() => goPage(n)}
+                className={`min-w-9 rounded-lg px-3 py-1.5 transition ${
+                  n === curPage
+                    ? "bg-primary text-on-primary"
+                    : "border border-hairline bg-surface text-ink-muted hover:border-primary/40"
+                }`}
+              >
+                {n}
+              </button>
+            )
+          )}
+          <button
+            onClick={() => goPage(curPage + 1)}
+            disabled={curPage === pageCount}
+            className="rounded-lg border border-hairline bg-surface px-3 py-1.5 text-ink-muted disabled:opacity-40"
+          >
+            다음
+          </button>
+        </nav>
       )}
     </div>
   );

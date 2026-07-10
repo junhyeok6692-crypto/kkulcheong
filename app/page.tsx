@@ -54,7 +54,7 @@ export default async function Home() {
           <a href="/" className="mb-6 inline-block" aria-label="꿀청 홈">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo.png"
+              src="/logo-v2.png"
               alt="꿀청"
               className="h-16 w-auto sm:h-20"
               style={{ filter: "drop-shadow(0 2px 3px rgba(80,55,0,0.28))" }}
