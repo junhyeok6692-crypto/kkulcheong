@@ -32,7 +32,7 @@ export default async function Home() {
   return (
     <main>
       {/* 딥 인디고 'night' 히어로 밴드 — 페이지의 단 하나의 어두운 섬 */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#fff7da] to-[#fce6a0] text-ink">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#fff7da] to-[#fce6a0] text-[#4a330a]">
         {/* 장식용 sticker dots */}
         <div className="pointer-events-none absolute inset-0">
           {STARS.map((s, i) => (
@@ -54,7 +54,7 @@ export default async function Home() {
           <a href="/" className="mb-6 inline-block" aria-label="꿀청 홈">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo-v2.png"
+              src="/logo-v3.png"
               alt="꿀청"
               className="h-16 w-auto sm:h-20"
               style={{ filter: "drop-shadow(0 2px 3px rgba(80,55,0,0.28))" }}
@@ -65,11 +65,11 @@ export default async function Home() {
             <br />
             흩어진 공고를 한 곳에서
           </h1>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-muted">
+          <p className="mt-5 max-w-lg text-base leading-relaxed text-[#8a6a2e]">
             전국 지원사업을 모아 마감임박순으로 정리했어요.
             <br />
-            <span className="mt-1 inline-block text-lg font-semibold text-ink">
-              내 정보를 넣으면 <span className="text-primary">맞춤 정책</span>을
+            <span className="mt-1 inline-block text-lg font-semibold text-[#4a330a]">
+              내 정보를 넣으면 <span className="text-[#c05600]">맞춤 정책</span>을
               찾아드립니다.
             </span>
           </p>
