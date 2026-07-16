@@ -23,6 +23,13 @@ const collapse = (r) => {
   const u = [...new Set(r)];
   return u.filter((x) => x !== "전국").length >= 8 ? ["전국"] : u;
 };
+// lclsfNm 중복 나열/구 분류 정리 (lib/youth.ts 와 동일 규칙)
+const LEGACY_CATEGORY = { 참여권리:"참여･기반", 복지문화:"금융･복지･문화", 교육:"교육･직업훈련", 진로:"교육･직업훈련" };
+const cleanCategory = (raw) => {
+  const first = [...new Set(s(raw).split(",").map((v) => v.trim()).filter(Boolean))][0];
+  if (!first) return "기타";
+  return LEGACY_CATEGORY[first] ?? first;
+};
 const endOf = (period) => {
   const p = s(period).split("~");
   const m = (p[1] ?? p[0] ?? "").trim().match(/(\d{4})[-.]?(\d{2})[-.]?(\d{2})/);
@@ -71,7 +78,7 @@ async function youth() {
     const codes = s(it.zipCd).split(",").map((c) => c.trim()).filter(Boolean);
     return {
       id: `YTH-${no}`, source: "온통청년",
-      t: s(it.plcyNm), cat: s(it.lclsfNm) || "기타",
+      t: s(it.plcyNm), cat: cleanCategory(it.lclsfNm),
       rgn: collapse(codes.map((c) => SIDO[c.slice(0,2)]).filter(Boolean)),
       org: s(it.sprvsnInstCdNm), execOrg: s(it.operInstCdNm),
       target: noLimit || (!minA && !maxA) ? "청년" : `만 ${minA}~${maxA}세 청년`,

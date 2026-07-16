@@ -23,6 +23,20 @@ export const YOUTH_CATEGORIES = [
   "일자리", "주거", "교육･직업훈련", "금융･복지･문화", "참여･기반",
 ];
 
+// lclsfNm 이 "금융･복지･문화,금융･복지･문화" 처럼 중복 나열되거나
+// "참여권리","복지문화","교육" 등 구 분류로 오는 경우가 있어 정리한다.
+const LEGACY_CATEGORY: Record<string, string> = {
+  참여권리: "참여･기반",
+  복지문화: "금융･복지･문화",
+  교육: "교육･직업훈련",
+  진로: "교육･직업훈련",
+};
+function cleanCategory(raw: string): string {
+  const first = [...new Set(str(raw).split(",").map((v) => v.trim()).filter(Boolean))][0];
+  if (!first) return "기타";
+  return LEGACY_CATEGORY[first] ?? first;
+}
+
 // "20260707 ~ 20260731" → "2026-07-31"
 function parseEnd(period: string): string | null {
   const parts = str(period).split("~");
@@ -77,7 +91,7 @@ function normalize(it: Record<string, unknown>): Policy {
     title: str(it.plcyNm),
     org: str(it.sprvsnInstCdNm), // 주관기관
     execOrg: str(it.operInstCdNm), // 운영기관
-    category: str(it.lclsfNm) || "기타",
+    category: cleanCategory(str(it.lclsfNm)),
     target: ageText,
     summary: (expln || sprt).replace(/\s+/g, " ").slice(0, 120),
     summaryFull: full,
