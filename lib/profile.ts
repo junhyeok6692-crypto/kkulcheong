@@ -1,5 +1,5 @@
 // 내 기본정보(프로필) 기반 맞춤 매칭
-import type { Policy } from "@/lib/types";
+import type { PolicyListItem } from "@/lib/types";
 
 export const REGION_OPTIONS = [
   "서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종",
@@ -58,7 +58,7 @@ export function saveProfile(p: Profile) {
 }
 
 // 이 정책이 내 프로필에 해당되는가?
-export function matchPolicy(p: Policy, profile: Profile): boolean {
+export function matchPolicy(p: PolicyListItem, profile: Profile): boolean {
   // 지역: 정책에 지역 태그가 있으면 내 지역 또는 '전국'이 포함돼야 통과.
   //       지역 태그가 아예 없으면 전국 대상으로 보고 통과.
   if (profile.region && p.regions.length > 0) {

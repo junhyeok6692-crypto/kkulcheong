@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAllPolicies } from "@/lib/policies";
+import { toListItem } from "@/lib/types";
 import PolicyList from "@/components/PolicyList";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -91,7 +92,7 @@ export default async function Home() {
             데이터를 불러오지 못했어요: {error}
           </div>
         ) : (
-          <PolicyList policies={policies} />
+          <PolicyList policies={policies.map(toListItem)} />
         )}
       </div>
 

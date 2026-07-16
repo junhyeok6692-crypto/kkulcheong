@@ -10,10 +10,11 @@
   --color-ink: #0a0a0a; /* 본문·헤드라인 (소프트 트루블랙) */
   --color-ink-secondary: #31302e;
   --color-ink-muted: #615d59;
-  --color-ink-faint: #a39e98;
+  --color-ink-faint: #726c66; /* 접근성: 기존 #a39e98 은 대비 2.66:1 로 WCAG AA 미달 → 4.76:1 */
 
   /* 유일한 구조적 액센트 — Notion 블루 */
-  --color-primary: #0075de;
+  /* 접근성: 원래 #0075de 는 캔버스 위 4.19:1 로 미달 → 5.05:1 로 살짝 진하게 */
+  --color-primary: #0069c4;
   --color-primary-active: #005bab;
   --color-on-primary: #ffffff;
 
@@ -42,6 +43,14 @@ body {
   background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/* 접근성: 키보드 포커스 표시.
+   마우스 클릭 시엔 안 보이고(:focus-visible), Tab 이동 시에만 나타난다. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Notion식 '거의 안 보이는' 다층 그림자 */

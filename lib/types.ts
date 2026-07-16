@@ -27,6 +27,42 @@ export type Policy = {
   extra?: { label: string; value: string }[]; // 소스별 추가 정보(상세페이지 표)
 };
 
+// 목록 화면에 필요한 필드만 추린 형태.
+// 상세 전용 필드(summaryFull, applyMethod, contact, extra 등)는 용량이 커서
+// 목록에 내려보내지 않는다. (공고 4,000여 건 × 본문 = 수 MB 절감)
+export type PolicyListItem = Pick<
+  Policy,
+  | "id"
+  | "source"
+  | "title"
+  | "org"
+  | "category"
+  | "target"
+  | "summary"
+  | "regions"
+  | "tags"
+  | "url"
+  | "period"
+  | "endDate"
+>;
+
+export function toListItem(p: Policy): PolicyListItem {
+  return {
+    id: p.id,
+    source: p.source,
+    title: p.title,
+    org: p.org,
+    category: p.category,
+    target: p.target,
+    summary: p.summary,
+    regions: p.regions,
+    tags: p.tags,
+    url: p.url,
+    period: p.period,
+    endDate: p.endDate,
+  };
+}
+
 // 시·도 (지역 필터 기준)
 export const REGION_LIST = [
   "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",

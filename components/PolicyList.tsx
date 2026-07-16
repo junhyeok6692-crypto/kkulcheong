@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { Policy } from "@/lib/types";
+import type { PolicyListItem } from "@/lib/types";
 import {
   REGION_OPTIONS,
   TARGET_OPTIONS,
@@ -85,7 +85,7 @@ function Chip({
   );
 }
 
-function Card({ p }: { p: Policy }) {
+function Card({ p }: { p: PolicyListItem }) {
   const dot = CAT_DOT[p.category] ?? "bg-ink-faint";
   const urgent = isUrgent(p.endDate);
   return (
@@ -138,7 +138,7 @@ function Card({ p }: { p: Policy }) {
 // 정책이 속한 지역 키 (지역 태그 없으면 전국·공통)
 const REGION_ORDER = [...REGION_OPTIONS, "전국", "전국·공통"];
 const NATIONWIDE = ["전국", "전국·공통"];
-function policyRegions(p: Policy): string[] {
+function policyRegions(p: PolicyListItem): string[] {
   return p.regions.length ? p.regions : ["전국·공통"];
 }
 const regionBtnCls = (active: boolean) =>
@@ -148,13 +148,13 @@ const regionBtnCls = (active: boolean) =>
       : "border border-hairline bg-surface text-ink-muted hover:border-primary/40"
   }`;
 
-export default function PolicyList({ policies }: { policies: Policy[] }) {
+export default function PolicyList({ policies }: { policies: PolicyListItem[] }) {
   const [q, setQ] = useState("");
   const [hideExpired, setHideExpired] = useState(true);
   const [regionMode, setRegionMode] = useState(false);
   const [regionFilter, setRegionFilter] = useState("");
   const [showProfile, setShowProfile] = useState(false);
-  const [sourceFilter, setSourceFilter] = useState<"" | Policy["source"]>("");
+  const [sourceFilter, setSourceFilter] = useState<"" | PolicyListItem["source"]>("");
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -257,6 +257,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
       <div className="mb-4 rounded-[12px] border border-hairline bg-surface">
         <button
           onClick={() => setShowProfile((s) => !s)}
+          aria-expanded={showProfile}
           className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-ink"
         >
           <span>내 정보로 맞춤 찾기</span>
@@ -276,6 +277,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
               <select
                 value={profile.region}
                 onChange={(e) => setProfile((p) => ({ ...p, region: e.target.value }))}
+                aria-label="내 지역 선택"
                 className="rounded border border-hairline bg-surface px-3 py-1.5 text-sm text-ink"
               >
                 <option value="">선택 안 함</option>
@@ -323,7 +325,8 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="사업명·키워드 검색 (예: 창업, 자금, 청년)"
-          className="mb-3 w-full rounded border border-hairline bg-surface px-4 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-primary focus:shadow-soft"
+          aria-label="지원사업 검색"
+          className="mb-3 w-full rounded border border-hairline bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-primary focus:shadow-soft"
         />
 
         {/* 구분: 정부지원사업 / 청년정책 */}
@@ -459,6 +462,8 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
               <button
                 key={n}
                 onClick={() => goPage(n)}
+                aria-label={`${n}페이지`}
+                aria-current={n === curPage ? "page" : undefined}
                 className={`min-w-9 rounded-lg px-3 py-1.5 transition ${
                   n === curPage
                     ? "bg-primary text-on-primary"
