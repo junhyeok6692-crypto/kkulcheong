@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AdSenseScript } from "@/components/AdSense";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -24,6 +25,8 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendard-variable-dynamic-subset.min.css"
         />
         {children}
+        {/* 게시자 ID(NEXT_PUBLIC_ADSENSE_CLIENT)가 있을 때만 로드 */}
+        <AdSenseScript />
       </body>
     </html>
   );
