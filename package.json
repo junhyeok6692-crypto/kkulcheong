@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:api": "node --env-file=.env.local scripts/test-api.mjs"
+    "test:api": "node --env-file=.env.local scripts/test-api.mjs",
+    "gen:preview": "node --env-file=.env.local scripts/gen-preview-data.mjs"
   },
   "dependencies": {
     "next": "16.2.10",

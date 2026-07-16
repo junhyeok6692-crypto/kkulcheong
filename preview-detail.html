@@ -86,7 +86,8 @@
 <script src="preview-data.js"></script>
 <script>
   const CAT_DOT={창업:"var(--purple)",금융:"var(--sky)",기술:"var(--teal)",경영:"var(--orange)",
-    인력:"var(--pink)",수출:"var(--green)",내수:"var(--brown)",기타:"var(--ink-faint)"};
+    인력:"var(--pink)",수출:"var(--green)",내수:"var(--brown)",기타:"var(--ink-faint)",
+    일자리:"var(--teal)",주거:"var(--orange)","교육･직업훈련":"var(--purple)","금융･복지･문화":"var(--pink)","참여･기반":"var(--green)"};
 
   function daysLeft(end){if(!end)return null;const e=new Date(end+"T23:59:59");return Math.ceil((e-new Date())/864e5)}
   const esc=(s)=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -124,6 +125,7 @@
         ${row("지원대상",p.target)}
         ${row("신청기간",p.period)}
         ${row("지원분야",p.cat)}
+        ${(p.extra||[]).map(e=>row(e.label,e.value)).join("")}
       </dl>
       ${sec("사업 개요",p.full)}
       ${sec("신청 방법",p.applyMethod)}
@@ -131,9 +133,9 @@
       ${p.fileUrl?`<section><h2>첨부파일</h2><a class="filelink" href="${esc(p.fileUrl)}" target="_blank" rel="noopener noreferrer">${esc(p.fileName||"첨부파일 내려받기")}</a></section>`:""}
       <div class="cta">
         ${p.applyUrl?`<a class="btn-primary" href="${esc(p.applyUrl)}" target="_blank" rel="noopener noreferrer">접수 홈페이지로 이동</a>`:""}
-        <a class="btn-ghost" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">기업마당 원문 공고 보기</a>
+        <a class="btn-ghost" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${esc(p.source)} 원문 공고 보기</a>
       </div>
-      <p class="notice">이 페이지는 기업마당 공개 데이터를 보기 쉽게 정리한 것입니다. 신청 자격·제출서류 등 최종 내용은 반드시 원문 공고와 소관기관 안내를 확인해 주세요.</p>
+      <p class="notice">이 페이지는 ${esc(p.source)}의 공개 데이터를 보기 쉽게 정리한 것입니다. 신청 자격·제출서류 등 최종 내용은 반드시 원문 공고와 소관기관 안내를 확인해 주세요.</p>
       <a class="back" href="preview.html">← 다른 지원사업 보러가기</a>
     `;
   }
