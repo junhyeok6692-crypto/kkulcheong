@@ -54,6 +54,18 @@ export function htmlToText(html: string): string {
 
 export const str = (v: unknown) => (v == null ? "" : String(v).trim());
 
+// 외부 API가 주는 URL은 http/https 만 허용한다.
+// (javascript:, data: 등이 href 에 들어가면 XSS 가 되므로 차단)
+export function safeUrl(v: unknown): string {
+  const s = str(v);
+  if (!/^https?:\/\//i.test(s)) return "";
+  try {
+    return new URL(s).toString();
+  } catch {
+    return "";
+  }
+}
+
 // 지역이 8곳 이상이면 사실상 전국
 export function collapseNationwide(regions: string[]): string[] {
   const r = [...new Set(regions)];

@@ -6,6 +6,7 @@ import {
   REGION_LIST,
   htmlToText,
   str,
+  safeUrl,
   collapseNationwide,
 } from "./types";
 
@@ -51,12 +52,12 @@ function normalize(item: Record<string, unknown>): Policy {
     summaryFull: full,
     applyMethod: htmlToText(str(item.reqstMthPapersCn)),
     contact: htmlToText(str(item.refrncNm)),
-    applyUrl: str(item.rceptEngnHmpgUrl),
-    fileUrl: str(item.flpthNm),
+    applyUrl: safeUrl(item.rceptEngnHmpgUrl),
+    fileUrl: safeUrl(item.flpthNm),
     fileName: str(item.fileNm),
     regions,
     tags,
-    url: str(item.pblancUrl),
+    url: safeUrl(item.pblancUrl),
     period,
     endDate: parseEndDate(period),
     createdAt: str(item.creatPnttm),

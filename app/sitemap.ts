@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllPolicies } from "@/lib/policies";
+import { GUIDES } from "@/lib/guides";
 
 export const revalidate = 3600;
 
@@ -14,6 +15,13 @@ function toDate(s: string): Date {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${BASE}/`, changeFrequency: "hourly", priority: 1 },
+    { url: `${BASE}/guide`, changeFrequency: "monthly", priority: 0.7 },
+    ...GUIDES.map((g) => ({
+      url: `${BASE}/guide/${g.slug}`,
+      lastModified: toDate(g.updated),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
     { url: `${BASE}/about`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE}/privacy`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${BASE}/terms`, changeFrequency: "yearly", priority: 0.3 },

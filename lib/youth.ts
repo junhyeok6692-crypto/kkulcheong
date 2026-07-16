@@ -5,6 +5,7 @@ import {
   type Policy,
   htmlToText,
   str,
+  safeUrl,
   collapseNationwide,
 } from "./types";
 
@@ -82,7 +83,7 @@ function normalize(it: Record<string, unknown>): Policy {
   if (cond) extra.push({ label: "추가 자격요건", value: cond });
   const etc = htmlToText(str(it.etcMttrCn));
   if (etc) extra.push({ label: "기타 사항", value: etc });
-  const ref = str(it.refUrlAddr1);
+  const ref = safeUrl(it.refUrlAddr1);
   if (ref) extra.push({ label: "참고 링크", value: ref });
 
   return {
@@ -97,7 +98,7 @@ function normalize(it: Record<string, unknown>): Policy {
     summaryFull: full,
     applyMethod: htmlToText(str(it.plcyAplyMthdCn)),
     contact: str(it.operInstCdNm), // 별도 연락처 필드가 없어 운영기관으로 대체
-    applyUrl: str(it.aplyUrlAddr),
+    applyUrl: safeUrl(it.aplyUrlAddr),
     fileUrl: "",
     fileName: "",
     regions: regionsFromZip(it.zipCd),

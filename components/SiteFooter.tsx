@@ -6,6 +6,9 @@ export default function SiteFooter() {
     <footer className="mt-12 border-t border-hairline bg-canvas">
       <div className="mx-auto max-w-3xl px-4 py-8 text-center text-xs text-ink-faint">
         <nav className="mb-3 flex flex-wrap justify-center gap-x-4 gap-y-2">
+          <Link href="/guide" className="hover:text-primary">
+            가이드
+          </Link>
           <Link href="/about" className="hover:text-primary">
             소개
           </Link>

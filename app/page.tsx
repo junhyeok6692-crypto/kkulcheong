@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getAllPolicies } from "@/lib/policies";
 import PolicyList from "@/components/PolicyList";
 import SiteFooter from "@/components/SiteFooter";
@@ -74,6 +75,12 @@ export default async function Home() {
               찾아드립니다.
             </span>
           </p>
+          <Link
+            href="/guide"
+            className="mt-6 inline-block rounded-full border border-[#c9a24a] bg-white/60 px-4 py-2 text-sm font-medium text-[#4a330a] transition hover:bg-white"
+          >
+            신청 전 알아두기 · 지원사업 가이드 →
+          </Link>
         </div>
       </section>
 

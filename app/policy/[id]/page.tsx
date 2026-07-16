@@ -56,6 +56,8 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export default async function PolicyDetail({ params }: Props) {
   const { id } = await params;
   const p = await getPolicy(id);
@@ -65,8 +67,39 @@ export default async function PolicyDetail({ params }: Props) {
   const urgent = d !== null && d >= 0 && d <= 5;
   const dot = CAT_DOT[p.category] ?? "bg-ink-faint";
 
+  // 구조화 데이터 (검색결과에 경로 노출 + 서비스 정보 전달)
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "홈", item: BASE },
+        { "@type": "ListItem", position: 2, name: p.category },
+        { "@type": "ListItem", position: 3, name: p.title },
+      ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "GovernmentService",
+      name: p.title,
+      description: p.summary,
+      serviceType: p.category,
+      provider: { "@type": "GovernmentOrganization", name: p.org },
+      audience: { "@type": "Audience", audienceType: p.target },
+      areaServed: p.regions.length ? p.regions.join(", ") : "대한민국",
+      url: `${BASE}/policy/${p.id}`,
+    },
+  ];
+
   return (
     <main>
+      {/* </script> 로 빠져나가는 것을 막기 위해 < 를 이스케이프 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <SiteHeader />
 
       <article className="mx-auto max-w-3xl px-4 py-8">
