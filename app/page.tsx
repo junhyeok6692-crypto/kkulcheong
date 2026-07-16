@@ -61,7 +61,7 @@ export default async function Home() {
               <img
                 src="/logo-v3.png"
                 alt="꿀청"
-                className="h-20 w-auto sm:h-28"
+                className="h-16 w-auto sm:h-24"
                 style={{ filter: "drop-shadow(0 2px 3px rgba(80,55,0,0.28))" }}
               />
             </a>
