@@ -3,6 +3,7 @@
 import type { Policy } from "./types";
 import { fetchBizinfoPolicies } from "./bizinfo";
 import { fetchYouthPolicies } from "./youth";
+import { fetchKstartupPolicies } from "./kstartup";
 
 const TTL_MS = 60 * 60 * 1000; // 1시간
 let cache: { at: number; data: Policy[] } | null = null;
@@ -13,6 +14,7 @@ async function fetchAll(): Promise<Policy[]> {
   const results = await Promise.allSettled([
     fetchBizinfoPolicies(),
     fetchYouthPolicies(),
+    fetchKstartupPolicies(),
   ]);
 
   const merged: Policy[] = [];

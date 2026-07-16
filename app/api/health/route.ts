@@ -4,15 +4,17 @@
 
 import { fetchBizinfoPolicies } from "@/lib/bizinfo";
 import { fetchYouthPolicies } from "@/lib/youth";
+import { fetchKstartupPolicies } from "@/lib/kstartup";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET() {
   const t0 = Date.now();
-  const [biz, youth] = await Promise.allSettled([
+  const [biz, youth, kst] = await Promise.allSettled([
     fetchBizinfoPolicies(),
     fetchYouthPolicies(),
+    fetchKstartupPolicies(),
   ]);
 
   const stat = (r: PromiseSettledResult<unknown[]>) =>
@@ -20,8 +22,9 @@ export async function GET() {
       ? { ok: true, count: r.value.length }
       : { ok: false, count: 0 };
 
-  const sources = { bizinfo: stat(biz), youth: stat(youth) };
-  const healthy = sources.bizinfo.count + sources.youth.count > 0;
+  const sources = { bizinfo: stat(biz), youth: stat(youth), kstartup: stat(kst) };
+  const healthy =
+    sources.bizinfo.count + sources.youth.count + sources.kstartup.count > 0;
 
   return Response.json(
     { status: healthy ? "ok" : "no-data", sources, tookMs: Date.now() - t0 },

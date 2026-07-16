@@ -20,6 +20,13 @@ import {
   type Profile,
 } from "@/lib/profile";
 
+// 소스 표시 이름
+const SOURCE_LABEL: Record<string, string> = {
+  기업마당: "정부지원사업",
+  온통청년: "청년정책",
+  "K-Startup": "창업지원",
+};
+
 // 분야별 카테고리 dot 색상 (장식 전용 스티커 팔레트)
 const CAT_DOT: Record<string, string> = {
   // 정부지원사업(기업마당)
@@ -37,6 +44,16 @@ const CAT_DOT: Record<string, string> = {
   "교육･직업훈련": "bg-accent-purple",
   "금융･복지･문화": "bg-accent-pink",
   "참여･기반": "bg-accent-green",
+  // 창업지원(K-Startup)
+  사업화: "bg-accent-purple",
+  "기술개발(R&D)": "bg-accent-teal",
+  창업교육: "bg-accent-sky",
+  "멘토링ㆍ컨설팅ㆍ교육": "bg-accent-sky",
+  "시설ㆍ공간ㆍ보육": "bg-accent-orange",
+  "융자ㆍ보증": "bg-accent-green",
+  "판로ㆍ해외진출": "bg-accent-pink",
+  글로벌: "bg-accent-pink",
+  "행사ㆍ네트워크": "bg-accent-brown",
 };
 
 // 마감까지 남은 일수 (null이면 상시/미정)
@@ -264,7 +281,7 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
 
   // 소스별 건수 (버튼용)
   const sourceCounts = useMemo(() => {
-    const c: Record<string, number> = { 기업마당: 0, 온통청년: 0 };
+    const c: Record<string, number> = { 기업마당: 0, 온통청년: 0, "K-Startup": 0 };
     for (const p of preBase) c[p.source] = (c[p.source] ?? 0) + 1;
     return c;
   }, [preBase]);
@@ -462,14 +479,14 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
           <button onClick={() => setSourceFilter("")} className={regionBtnCls(sourceFilter === "")}>
             전체 {preBase.length}
           </button>
-          {(["기업마당", "온통청년"] as const).map((s) =>
+          {(["기업마당", "온통청년", "K-Startup"] as const).map((s) =>
             sourceCounts[s] ? (
               <button
                 key={s}
                 onClick={() => setSourceFilter(s)}
                 className={regionBtnCls(sourceFilter === s)}
               >
-                {s === "기업마당" ? "정부지원사업" : "청년정책"} {sourceCounts[s]}
+                {SOURCE_LABEL[s]} {sourceCounts[s]}
               </button>
             ) : null
           )}

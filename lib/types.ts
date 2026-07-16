@@ -1,6 +1,6 @@
 // 여러 소스(기업마당, 온통청년...)를 담는 공용 데이터 모델
 
-export type Source = "기업마당" | "온통청년";
+export type Source = "기업마당" | "온통청년" | "K-Startup";
 
 export type Policy = {
   id: string; // 소스별 고유 ID (온통청년은 YTH- 접두)
