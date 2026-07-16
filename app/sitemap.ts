@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getAllPolicies } from "@/lib/bizinfo";
+import { getAllPolicies } from "@/lib/policies";
 
 export const revalidate = 3600;
 

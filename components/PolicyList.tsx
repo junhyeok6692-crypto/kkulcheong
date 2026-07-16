@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { Policy } from "@/lib/bizinfo";
+import type { Policy } from "@/lib/types";
 import {
   REGION_OPTIONS,
   TARGET_OPTIONS,
@@ -17,6 +17,7 @@ import {
 
 // 분야별 카테고리 dot 색상 (장식 전용 스티커 팔레트)
 const CAT_DOT: Record<string, string> = {
+  // 정부지원사업(기업마당)
   창업: "bg-accent-purple",
   금융: "bg-accent-sky",
   기술: "bg-accent-teal",
@@ -25,6 +26,12 @@ const CAT_DOT: Record<string, string> = {
   수출: "bg-accent-green",
   내수: "bg-accent-brown",
   기타: "bg-ink-faint",
+  // 청년정책(온통청년)
+  일자리: "bg-accent-teal",
+  주거: "bg-accent-orange",
+  "교육･직업훈련": "bg-accent-purple",
+  "금융･복지･문화": "bg-accent-pink",
+  "참여･기반": "bg-accent-green",
 };
 
 // 마감까지 남은 일수 (null이면 상시/미정)
@@ -147,6 +154,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
   const [regionMode, setRegionMode] = useState(false);
   const [regionFilter, setRegionFilter] = useState("");
   const [showProfile, setShowProfile] = useState(false);
+  const [sourceFilter, setSourceFilter] = useState<"" | Policy["source"]>("");
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -163,7 +171,7 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
   // 필터/페이지 크기가 바뀌면 1페이지로 초기화
   useEffect(() => {
     setPage(1);
-  }, [q, hideExpired, profile, regionFilter, perPage]);
+  }, [q, hideExpired, profile, regionFilter, sourceFilter, perPage]);
 
   const toggle = (key: "targets" | "interests", v: string) =>
     setProfile((p) => ({
@@ -171,8 +179,8 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
       [key]: p[key].includes(v) ? p[key].filter((x) => x !== v) : [...p[key], v],
     }));
 
-  // 지역 필터를 제외한 나머지 필터 적용 (지역 버튼 카운트의 기준)
-  const base = useMemo(() => {
+  // 소스/지역 필터를 제외한 나머지 필터 적용 (소스 버튼 카운트의 기준)
+  const preBase = useMemo(() => {
     const kw = q.trim().toLowerCase();
     return policies
       .filter((p) => {
@@ -195,6 +203,19 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
         return va - vb;
       });
   }, [policies, q, hideExpired, profile]);
+
+  // 소스별 건수 (버튼용)
+  const sourceCounts = useMemo(() => {
+    const c: Record<string, number> = { 기업마당: 0, 온통청년: 0 };
+    for (const p of preBase) c[p.source] = (c[p.source] ?? 0) + 1;
+    return c;
+  }, [preBase]);
+
+  // 소스 필터 적용 (지역 버튼 카운트의 기준)
+  const base = useMemo(
+    () => (sourceFilter ? preBase.filter((p) => p.source === sourceFilter) : preBase),
+    [preBase, sourceFilter]
+  );
 
   // 지역별 건수 (버튼용)
   const regionButtons = useMemo(() => {
@@ -303,6 +324,25 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
           placeholder="사업명·키워드 검색 (예: 창업, 자금, 청년)"
           className="mb-3 w-full rounded border border-hairline bg-surface px-4 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-primary focus:shadow-soft"
         />
+
+        {/* 구분: 정부지원사업 / 청년정책 */}
+        <div className="mb-3 flex flex-wrap gap-2 text-sm">
+          <button onClick={() => setSourceFilter("")} className={regionBtnCls(sourceFilter === "")}>
+            전체 {preBase.length}
+          </button>
+          {(["기업마당", "온통청년"] as const).map((s) =>
+            sourceCounts[s] ? (
+              <button
+                key={s}
+                onClick={() => setSourceFilter(s)}
+                className={regionBtnCls(sourceFilter === s)}
+              >
+                {s === "기업마당" ? "정부지원사업" : "청년정책"} {sourceCounts[s]}
+              </button>
+            ) : null
+          )}
+        </div>
+
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <button
             onClick={() => {

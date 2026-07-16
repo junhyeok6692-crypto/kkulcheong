@@ -1,4 +1,4 @@
-import { getAllPolicies } from "@/lib/bizinfo";
+import { getAllPolicies } from "@/lib/policies";
 import PolicyList from "@/components/PolicyList";
 import SiteFooter from "@/components/SiteFooter";
 

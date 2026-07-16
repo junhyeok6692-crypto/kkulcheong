@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPolicy } from "@/lib/bizinfo";
+import { getPolicy } from "@/lib/policies";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -16,6 +16,11 @@ const CAT_DOT: Record<string, string> = {
   수출: "bg-accent-green",
   내수: "bg-accent-brown",
   기타: "bg-ink-faint",
+  일자리: "bg-accent-teal",
+  주거: "bg-accent-orange",
+  "교육･직업훈련": "bg-accent-purple",
+  "금융･복지･문화": "bg-accent-pink",
+  "참여･기반": "bg-accent-green",
 };
 
 function daysLeft(endDate: string | null): number | null {
@@ -112,6 +117,10 @@ export default async function PolicyDetail({ params }: Props) {
           <Row label="지원대상" value={p.target} />
           <Row label="신청기간" value={p.period} />
           <Row label="지원분야" value={p.category} />
+          {/* 소스별 추가 정보 (청년정책: 연령·지원규모·자격요건 등) */}
+          {p.extra?.map((e) => (
+            <Row key={e.label} label={e.label} value={e.value} />
+          ))}
         </dl>
 
         {/* 사업개요 */}
@@ -177,13 +186,14 @@ export default async function PolicyDetail({ params }: Props) {
             rel="noopener noreferrer"
             className="rounded-full border border-hairline bg-surface px-5 py-2.5 text-sm font-medium text-ink-muted hover:border-primary/40"
           >
-            기업마당 원문 공고 보기
+            {p.source} 원문 공고 보기
           </a>
         </div>
 
         <p className="rounded-lg bg-surface px-4 py-3 text-xs leading-relaxed text-ink-faint ring-1 ring-hairline">
-          이 페이지는 기업마당 공개 데이터를 보기 쉽게 정리한 것입니다. 신청 자격·
-          제출서류 등 최종 내용은 반드시 원문 공고와 소관기관 안내를 확인해 주세요.
+          이 페이지는 {p.source}의 공개 데이터를 보기 쉽게 정리한 것입니다. 신청
+          자격·제출서류 등 최종 내용은 반드시 원문 공고와 소관기관 안내를 확인해
+          주세요.
         </p>
 
         <div className="mt-8">

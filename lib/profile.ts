@@ -1,5 +1,5 @@
 // 내 기본정보(프로필) 기반 맞춤 매칭
-import type { Policy } from "@/lib/bizinfo";
+import type { Policy } from "@/lib/types";
 
 export const REGION_OPTIONS = [
   "서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종",
@@ -20,9 +20,12 @@ const TARGET_KEYWORDS: Record<string, string[]> = {
   청년: ["청년"],
 };
 
-// 관심 분야 (bizinfo 분야 대분류와 동일)
+// 관심 분야 (각 소스의 분야 대분류를 그대로 사용)
 export const INTEREST_OPTIONS = [
+  // 정부지원사업(기업마당)
   "창업", "금융", "기술", "경영", "인력", "수출", "내수",
+  // 청년정책(온통청년)
+  "일자리", "주거", "교육･직업훈련", "금융･복지･문화", "참여･기반",
 ];
 
 export type Profile = {
