@@ -261,7 +261,7 @@
     const urgent=d!==null&&d>=0&&d<=5;
     const dd=d===null?'<span class="dday none">상시·미정</span>':d<0?'<span class="dday none">마감</span>':urgent?`<span class="dday-badge">마감임박 D-${d}</span>`:`<span class="dday normal">D-${d}</span>`;
     const period=p.end?`~ ${p.end}`:`상시`;
-    return `<li><a class="card${urgent?' urgent':''}" href="${p.url||'https://www.bizinfo.go.kr/web/index.do'}" target="_blank" rel="noopener noreferrer">
+    return `<li><a class="card${urgent?' urgent':''}" href="preview-detail.html?id=${encodeURIComponent(p.id)}">
       <div class="meta">
         <span class="cat"><span class="dot" style="background:${CAT_DOT[p.cat]||'var(--ink-faint)'}"></span>${p.cat}</span>
         ${p.rgn.slice(0,2).map(r=>`<span class="rgn">${r}</span>`).join("")}

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>공고 상세 · 꿀청</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendard-variable-dynamic-subset.min.css" />
+<style>
+  :root{
+    --canvas:#f6f5f4; --surface:#fff; --hairline:#e6e6e6;
+    --ink:#0a0a0a; --ink-2:#31302e; --ink-muted:#615d59; --ink-faint:#a39e98;
+    --primary:#0075de; --secondary:#213183;
+    --sky:#62aef0; --purple:#d6b6f6; --pink:#ff64c8; --orange:#dd5b00;
+    --teal:#2a9d99; --green:#1aae39; --brown:#523410;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--ink);
+    font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,"Segoe UI","Malgun Gothic",sans-serif;}
+  a{color:inherit;text-decoration:none}
+
+  /* 상단 바 */
+  .topbar{border-bottom:1px solid #f2e2ae;background:linear-gradient(180deg,#fff7da,#fdeec2)}
+  .topbar .in{max-width:768px;margin:0 auto;padding:12px 16px;display:flex;align-items:center}
+  .brandimg{height:40px;width:auto;display:block;filter:drop-shadow(0 1px 2px rgba(80,55,0,.25))}
+
+  .wrap{max-width:768px;margin:0 auto;padding:32px 16px}
+  .crumb{font-size:12px;color:var(--ink-faint);margin-bottom:16px}
+  .crumb a:hover{color:var(--primary)}
+  .crumb span{margin:0 6px}
+
+  .meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
+  .cat{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--hairline);background:var(--surface);
+    border-radius:9999px;padding:2px 8px;font-size:12px;color:var(--ink-2)}
+  .dot{width:6px;height:6px;border-radius:9999px}
+  .rgn{border-radius:9999px;background:var(--surface);box-shadow:0 0 0 1px var(--hairline);padding:2px 8px;font-size:12px;color:var(--ink-muted)}
+  .dday{font-size:12px;font-weight:500;color:var(--ink-muted)}
+  .dday.none{color:var(--ink-faint);font-weight:400}
+  .dday-badge{background:var(--orange);color:#fff;border-radius:9999px;padding:2px 8px;font-size:12px;font-weight:600}
+
+  h1{margin:0 0 16px;font-size:28px;line-height:1.35;letter-spacing:-.02em;font-weight:700}
+  @media(max-width:600px){h1{font-size:22px}}
+
+  dl{margin:0 0 24px;border:1px solid var(--hairline);border-radius:12px;background:var(--surface);padding:4px 16px}
+  .row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--hairline)}
+  .row:last-child{border-bottom:0}
+  dt{width:96px;flex-shrink:0;font-size:14px;color:var(--ink-faint);margin:0}
+  dd{margin:0;font-size:14px;color:var(--ink)}
+
+  section{margin-bottom:24px}
+  h2{margin:0 0 8px;font-size:18px;font-weight:700}
+  .body{white-space:pre-line;font-size:15px;line-height:1.7;color:var(--ink-2);margin:0}
+
+  .filelink{display:inline-block;border:1px solid var(--hairline);background:var(--surface);border-radius:8px;
+    padding:8px 12px;font-size:14px;color:var(--primary)}
+  .filelink:hover{border-color:rgba(0,117,222,.4)}
+
+  .cta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+  .btn-primary{background:var(--primary);color:#fff;border-radius:9999px;padding:10px 20px;font-size:14px;font-weight:500}
+  .btn-ghost{border:1px solid var(--hairline);background:var(--surface);color:var(--ink-muted);border-radius:9999px;padding:10px 20px;font-size:14px;font-weight:500}
+  .btn-ghost:hover{border-color:rgba(0,117,222,.4)}
+
+  .notice{background:var(--surface);box-shadow:0 0 0 1px var(--hairline);border-radius:8px;padding:12px 16px;
+    font-size:12px;line-height:1.7;color:var(--ink-faint)}
+  .back{display:inline-block;margin-top:32px;font-size:14px;color:var(--primary)}
+  .back:hover{text-decoration:underline}
+
+  footer{border-top:1px solid var(--hairline);background:var(--canvas);margin-top:48px}
+  footer .in{max-width:768px;margin:0 auto;padding:32px 16px;text-align:center;font-size:12px;color:var(--ink-faint)}
+  footer nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 16px;margin-bottom:12px}
+  .missing{padding:80px 0;text-align:center;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+  <div class="topbar"><div class="in">
+    <a href="preview.html" aria-label="꿀청 홈"><img class="brandimg" src="public/logo-v3.png" alt="꿀청" /></a>
+  </div></div>
+
+  <div class="wrap" id="content"></div>
+
+  <footer><div class="in">
+    <nav><span>소개</span><span>개인정보처리방침</span><span>이용약관</span><span>문의</span></nav>
+    <p>데이터 출처: 기업마당(bizinfo.go.kr) · 1시간마다 자동 갱신</p>
+    <p style="margin-top:4px">© 2026 꿀청 · 공고의 최종 내용은 각 기관의 원문 공고를 확인해 주세요.</p>
+  </div></footer>
+
+<script src="preview-data.js"></script>
+<script>
+  const CAT_DOT={창업:"var(--purple)",금융:"var(--sky)",기술:"var(--teal)",경영:"var(--orange)",
+    인력:"var(--pink)",수출:"var(--green)",내수:"var(--brown)",기타:"var(--ink-faint)"};
+
+  function daysLeft(end){if(!end)return null;const e=new Date(end+"T23:59:59");return Math.ceil((e-new Date())/864e5)}
+  const esc=(s)=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  function row(label,value){ return value?`<div class="row"><dt>${label}</dt><dd>${esc(value)}</dd></div>`:"" }
+  function sec(title,body){ return body?`<section><h2>${title}</h2><p class="body">${esc(body)}</p></section>`:"" }
+
+  // ?id= 로 공고 선택. 없으면 첫 번째 공고를 보여줌.
+  const id=new URLSearchParams(location.search).get("id");
+  const p=id?DATA.find(d=>d.id===id):DATA[0];
+  const el=document.getElementById("content");
+
+  if(!p){
+    el.innerHTML='<p class="missing">공고를 찾을 수 없습니다.<br><a class="back" href="preview.html">← 목록으로</a></p>';
+  }else{
+    document.title=p.t+" | 꿀청";
+    const d=daysLeft(p.end);
+    const urgent=d!==null&&d>=0&&d<=5;
+    const dd = d===null?'<span class="dday none">상시·미정</span>'
+      : d<0?'<span class="dday none">마감됨</span>'
+      : urgent?`<span class="dday-badge">마감임박 D-${d}</span>`
+      : `<span class="dday">D-${d}</span>`;
+
+    el.innerHTML=`
+      <nav class="crumb"><a href="preview.html">홈</a><span>›</span>${esc(p.cat)}</nav>
+      <div class="meta">
+        <span class="cat"><span class="dot" style="background:${CAT_DOT[p.cat]||'var(--ink-faint)'}"></span>${esc(p.cat)}</span>
+        ${p.rgn.map(r=>`<span class="rgn">${esc(r)}</span>`).join("")}
+        ${dd}
+      </div>
+      <h1>${esc(p.t)}</h1>
+      <dl>
+        ${row("소관기관",p.org)}
+        ${row("수행기관",p.execOrg)}
+        ${row("지원대상",p.target)}
+        ${row("신청기간",p.period)}
+        ${row("지원분야",p.cat)}
+      </dl>
+      ${sec("사업 개요",p.full)}
+      ${sec("신청 방법",p.applyMethod)}
+      ${sec("문의처",p.contact)}
+      ${p.fileUrl?`<section><h2>첨부파일</h2><a class="filelink" href="${esc(p.fileUrl)}" target="_blank" rel="noopener noreferrer">${esc(p.fileName||"첨부파일 내려받기")}</a></section>`:""}
+      <div class="cta">
+        ${p.applyUrl?`<a class="btn-primary" href="${esc(p.applyUrl)}" target="_blank" rel="noopener noreferrer">접수 홈페이지로 이동</a>`:""}
+        <a class="btn-ghost" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">기업마당 원문 공고 보기</a>
+      </div>
+      <p class="notice">이 페이지는 기업마당 공개 데이터를 보기 쉽게 정리한 것입니다. 신청 자격·제출서류 등 최종 내용은 반드시 원문 공고와 소관기관 안내를 확인해 주세요.</p>
+      <a class="back" href="preview.html">← 다른 지원사업 보러가기</a>
+    `;
+  }
+</script>
+</body>
+</html>
