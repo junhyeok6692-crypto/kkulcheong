@@ -317,7 +317,8 @@ export default function PolicyList({ policies }: { policies: Policy[] }) {
       </div>
 
       {/* 검색 + 보기 옵션 */}
-      <div className="sticky top-0 z-10 -mx-4 mb-6 border-b border-hairline bg-canvas/90 px-4 py-4 backdrop-blur">
+      {/* z-30: 카드 안의 '원문 공고' 버튼(z-10)이 스크롤 시 이 바를 뚫고 나오지 않도록 위에 둔다 */}
+      <div className="sticky top-0 z-30 -mx-4 mb-6 border-b border-hairline bg-canvas/90 px-4 py-4 backdrop-blur">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
