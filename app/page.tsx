@@ -54,7 +54,7 @@ export default async function Home() {
           ))}
         </div>
 
-        <div className="relative mx-auto max-w-3xl px-4 py-16 sm:py-20">
+        <div className="relative mx-auto max-w-3xl px-4 py-8 sm:py-10">
           <div className="mb-8 flex items-center gap-3">
             <a href="/" className="shrink-0" aria-label="꿀청 홈">
               {/* eslint-disable-next-line @next/next/no-img-element */}
