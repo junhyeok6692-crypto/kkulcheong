@@ -3,6 +3,7 @@ import { getAllPolicies } from "@/lib/policies";
 import { toListItem } from "@/lib/types";
 import PolicyList from "@/components/PolicyList";
 import SiteFooter from "@/components/SiteFooter";
+import SiteNav from "@/components/SiteNav";
 
 export const metadata = {
   title: "꿀청 · 정부지원사업 모아보기 | 매일 갱신되는 지원사업·정책",
@@ -54,15 +55,20 @@ export default async function Home() {
         </div>
 
         <div className="relative mx-auto max-w-3xl px-4 py-16 sm:py-20">
-          <a href="/" className="mb-6 inline-block" aria-label="꿀청 홈">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo-v3.png"
-              alt="꿀청"
-              className="h-16 w-auto sm:h-20"
-              style={{ filter: "drop-shadow(0 2px 3px rgba(80,55,0,0.28))" }}
-            />
-          </a>
+          <div className="mb-8 flex items-center gap-3">
+            <a href="/" className="shrink-0" aria-label="꿀청 홈">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-v3.png"
+                alt="꿀청"
+                className="h-14 w-auto sm:h-16"
+                style={{ filter: "drop-shadow(0 2px 3px rgba(80,55,0,0.28))" }}
+              />
+            </a>
+            <div className="ml-auto">
+              <SiteNav />
+            </div>
+          </div>
           <h1 className="text-4xl font-bold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
             정부지원사업,
             <br />
@@ -76,18 +82,37 @@ export default async function Home() {
               찾아드립니다.
             </span>
           </p>
-          <Link
-            href="/guide"
-            className="mt-6 inline-block rounded-full border border-[#c9a24a] bg-white/60 px-4 py-2 text-sm font-medium text-[#4a330a] transition hover:bg-white"
-          >
-            신청 전 알아두기 · 지원사업 가이드 →
-          </Link>
-          <Link
-            href="/training"
-            className="mt-6 ml-2 inline-block rounded-full border border-[#c9a24a] bg-white/60 px-4 py-2 text-sm font-medium text-[#4a330a] transition hover:bg-white"
-          >
-            내일배움카드 훈련과정 →
-          </Link>
+          {/* 훈련과정은 성격이 다른 콘텐츠라 카드로 분리해 눈에 띄게 한다 */}
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/training"
+              className="group flex items-center gap-3 rounded-[12px] border border-[#c9a24a] bg-white/80 px-4 py-3 transition hover:bg-white hover:shadow-soft"
+            >
+              <span className="h-8 w-1 shrink-0 rounded-full bg-[#c05600]" />
+              <span>
+                <span className="block text-sm font-bold text-[#4a330a]">
+                  내일배움카드 훈련과정
+                </span>
+                <span className="block text-xs text-[#8a6a2e]">
+                  만족도 높은 과정만 추려서 →
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/guide"
+              className="flex items-center gap-3 rounded-[12px] border border-[#c9a24a]/60 bg-white/50 px-4 py-3 transition hover:bg-white"
+            >
+              <span className="h-8 w-1 shrink-0 rounded-full bg-[#c9a24a]" />
+              <span>
+                <span className="block text-sm font-bold text-[#4a330a]">
+                  지원사업 가이드
+                </span>
+                <span className="block text-xs text-[#8a6a2e]">
+                  신청 전 알아둘 것 →
+                </span>
+              </span>
+            </Link>
+          </div>
         </div>
       </section>
 
