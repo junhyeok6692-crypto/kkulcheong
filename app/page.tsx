@@ -1,5 +1,6 @@
-import { fetchPolicies } from "@/lib/bizinfo";
+import { getAllPolicies } from "@/lib/bizinfo";
 import PolicyList from "@/components/PolicyList";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata = {
   title: "꿀청 · 정부지원사업 모아보기 | 매일 갱신되는 지원사업·정책",
@@ -21,10 +22,10 @@ const STARS = [
 ];
 
 export default async function Home() {
-  let policies: Awaited<ReturnType<typeof fetchPolicies>> = [];
+  let policies: Awaited<ReturnType<typeof getAllPolicies>> = [];
   let error = "";
   try {
-    policies = await fetchPolicies(2000);
+    policies = await getAllPolicies();
   } catch (e) {
     error = e instanceof Error ? e.message : "데이터를 불러오지 못했습니다.";
   }
@@ -87,11 +88,7 @@ export default async function Home() {
         )}
       </div>
 
-      <footer className="border-t border-hairline bg-canvas">
-        <div className="mx-auto max-w-3xl px-4 py-8 text-center text-xs text-ink-faint">
-          데이터 출처: 기업마당(bizinfo.go.kr) · 1시간마다 갱신
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }

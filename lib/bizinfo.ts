@@ -8,10 +8,16 @@ export type Policy = {
   execOrg: string; // excInsttNm (수행기관)
   category: string; // pldirSportRealmLclasCodeNm (분야)
   target: string; // trgetNm (대상)
-  summary: string; // bsnsSumryCn (HTML 제거)
+  summary: string; // 목록용 짧은 요약(한 줄)
+  summaryFull: string; // 상세용 본문(문단 유지)
+  applyMethod: string; // reqstMthPapersCn (신청방법)
+  contact: string; // refrncNm (문의처)
+  applyUrl: string; // rceptEngnHmpgUrl (접수 홈페이지)
+  fileUrl: string; // flpthNm (첨부파일)
+  fileName: string; // fileNm
   regions: string[]; // hashtags에서 추출한 지역
   tags: string[]; // hashtags 전체
-  url: string; // pblancUrl (상세)
+  url: string; // pblancUrl (기업마당 원문)
   period: string; // reqstBeginEndDe 원문
   endDate: string | null; // 마감일 (YYYY-MM-DD) — 정렬용
   createdAt: string; // creatPnttm
@@ -29,11 +35,22 @@ export const CATEGORIES = [
   "금융", "기술", "인력", "수출", "내수", "창업", "경영", "기타",
 ];
 
-function stripHtml(html: string): string {
+// HTML → 텍스트 (문단 구분 유지, 태그는 모두 제거하므로 XSS 안전)
+function htmlToText(html: string): string {
   return (html || "")
-    .replace(/<[^>]+>/g, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<\/li>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
@@ -56,6 +73,7 @@ function normalize(item: Record<string, unknown>): Policy {
   // 지역이 8곳 이상 붙은 공고는 사실상 전국 대상 → '전국'으로 정리
   if (regions.filter((r) => r !== "전국").length >= 8) regions = ["전국"];
   const period = s(item.reqstBeginEndDe);
+  const full = htmlToText(s(item.bsnsSumryCn));
 
   return {
     id: s(item.pblancId),
@@ -64,7 +82,13 @@ function normalize(item: Record<string, unknown>): Policy {
     execOrg: s(item.excInsttNm),
     category: s(item.pldirSportRealmLclasCodeNm) || "기타",
     target: s(item.trgetNm),
-    summary: stripHtml(s(item.bsnsSumryCn)),
+    summary: full.replace(/\s+/g, " ").slice(0, 120),
+    summaryFull: full,
+    applyMethod: htmlToText(s(item.reqstMthPapersCn)),
+    contact: htmlToText(s(item.refrncNm)),
+    applyUrl: s(item.rceptEngnHmpgUrl),
+    fileUrl: s(item.flpthNm),
+    fileName: s(item.fileNm),
     regions,
     tags,
     url: s(item.pblancUrl),
@@ -75,17 +99,42 @@ function normalize(item: Record<string, unknown>): Policy {
   };
 }
 
-export async function fetchPolicies(count = 100): Promise<Policy[]> {
+export async function fetchPolicies(count = 2000): Promise<Policy[]> {
   const key = process.env.BIZINFO_API_KEY;
   if (!key) throw new Error("BIZINFO_API_KEY 환경변수가 없습니다.");
 
   const url = `https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do?crtfcKey=${key}&dataType=json&searchCnt=${count}`;
 
-  // 1시간마다 재검증 (ISR) — 매 요청마다 외부 API를 때리지 않음
+  // 응답이 2MB를 넘어 Next fetch 캐시에는 담기지 않는다(경고만 발생).
+  // 실제 캐싱은 페이지 단위 ISR(revalidate) + 아래 메모리 캐시가 담당한다.
   const res = await fetch(url, { next: { revalidate: 3600 } });
   if (!res.ok) throw new Error(`기업마당 API 오류: ${res.status}`);
 
   const json = (await res.json()) as { jsonArray?: Record<string, unknown>[] };
   const items = Array.isArray(json.jsonArray) ? json.jsonArray : [];
   return items.map(normalize).filter((p) => p.id && p.title);
+}
+
+// ── 메모리 캐시 (목록/상세/사이트맵이 4.7MB 응답을 매번 받지 않도록) ──
+const TTL_MS = 60 * 60 * 1000; // 1시간
+let cache: { at: number; data: Policy[] } | null = null;
+let inflight: Promise<Policy[]> | null = null;
+
+export async function getAllPolicies(): Promise<Policy[]> {
+  if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
+  if (inflight) return inflight; // 동시 요청 합치기
+  inflight = fetchPolicies()
+    .then((data) => {
+      cache = { at: Date.now(), data };
+      return data;
+    })
+    .finally(() => {
+      inflight = null;
+    });
+  return inflight;
+}
+
+export async function getPolicy(id: string): Promise<Policy | null> {
+  const all = await getAllPolicies();
+  return all.find((p) => p.id === id) ?? null;
 }

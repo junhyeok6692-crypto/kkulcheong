@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type { Policy } from "@/lib/bizinfo";
 import {
   REGION_OPTIONS,
@@ -81,10 +82,8 @@ function Card({ p }: { p: Policy }) {
   const dot = CAT_DOT[p.category] ?? "bg-ink-faint";
   const urgent = isUrgent(p.endDate);
   return (
-    <a
-      href={p.url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href={`/policy/${p.id}`}
       className={`block rounded-[12px] border bg-surface p-4 transition hover:shadow-soft ${
         urgent ? "border-accent-orange/50 ring-1 ring-accent-orange/25" : "border-hairline"
       }`}
@@ -112,7 +111,7 @@ function Card({ p }: { p: Policy }) {
         {p.target && <span>대상 {p.target}</span>}
         {p.period && <span>{p.period}</span>}
       </div>
-    </a>
+    </Link>
   );
 }
 
