@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 import { getAllPolicies } from "@/lib/policies";
 import { GUIDES } from "@/lib/guides";
+import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 3600;
 
-// 배포 시 NEXT_PUBLIC_SITE_URL 에 실제 도메인을 넣으세요 (예: https://kkulcheong.com)
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const BASE = SITE_URL;
 
 function toDate(s: string): Date {
   const d = new Date(s.replace(" ", "T"));

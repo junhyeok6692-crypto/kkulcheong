@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { GUIDES, getGuide, type Block } from "@/lib/guides";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { SITE_URL } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -68,7 +69,7 @@ function Blocks({ blocks }: { blocks: Block[] }) {
   );
 }
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const BASE = SITE_URL;
 
 export default async function GuideArticle({ params }: Props) {
   const { slug } = await params;

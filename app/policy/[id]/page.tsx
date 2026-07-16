@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getPolicy } from "@/lib/policies";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 3600;
 
@@ -56,7 +57,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const BASE = SITE_URL;
 
 export default async function PolicyDetail({ params }: Props) {
   const { id } = await params;

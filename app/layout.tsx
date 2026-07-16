@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AdSenseScript } from "@/components/AdSense";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ),
+  metadataBase: new URL(SITE_URL),
   title: "꿀청 · 정부지원사업 모아보기",
   description:
     "전국 정부지원사업 공고를 한 곳에서. 분야·지역 필터, 마감임박 정렬, 내 정보 기반 맞춤 검색.",
