@@ -41,8 +41,8 @@ export default async function TrainingPage() {
         <p className="mb-6 text-[15px] leading-relaxed text-ink-muted">
           고용24에 등록된 훈련과정은 17만 개가 넘습니다. 그중{" "}
           <b className="text-ink">국민내일배움카드로 들을 수 있고, 수강생 만족도가 집계된 과정</b>
-          만 골라 <b className="text-ink">만족도 높은 순</b>으로 정리했습니다. 앞으로
-          3개월 내 시작하는 과정입니다.
+          만 <b className="text-ink">분야별로</b> 골라 만족도 높은 순으로 정리했습니다.
+          앞으로 3개월 내 시작하는 과정입니다.
         </p>
 
         <div className="mb-6 rounded-[12px] border border-hairline bg-surface p-4 text-sm leading-relaxed text-ink-secondary">
@@ -66,9 +66,14 @@ export default async function TrainingPage() {
         )}
 
         <p className="mt-8 rounded-lg bg-surface px-4 py-3 text-xs leading-relaxed text-ink-faint ring-1 ring-hairline">
-          데이터 출처: 고용24(work24.go.kr) 공개 API · 1시간마다 갱신. 만족도는
-          기존 수강생 평가를 집계한 값이며, 수강료·정원은 변동될 수 있습니다. 신청과
-          최종 조건은 고용24 원문에서 확인해 주세요.
+          <b>수강료 안내</b> — 표시된 금액은 과정의 <b>전체 수강료</b>입니다. 국민내일배움카드로
+          지원받으면 실제 부담액은 이보다 훨씬 적지만, 자부담 비율은 과정 유형(국가기간전략산업직종
+          등은 0%, 일반 과정은 최대 55%)과 남은 카드 한도에 따라 달라집니다. 고용24 API 는 자부담
+          정보를 제공하지 않으므로, <b>정확한 결제 금액은 고용24 원문에서 확인해 주세요.</b>
+          <br />
+          <br />
+          데이터 출처: 고용24(work24.go.kr) 공개 API · 1시간마다 갱신. 만족도는 기존 수강생 평가를
+          집계한 값이며, 수강료·정원은 변동될 수 있습니다.
         </p>
       </div>
       <SiteFooter />

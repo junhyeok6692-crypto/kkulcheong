@@ -2,17 +2,19 @@
 //
 // 전체는 17만 건이 넘지만 그대로 노출하지 않는다.
 //  - 상세페이지를 만들지 않고 원문(고용24)으로 링크한다  → 얇은 페이지 양산 방지
-//  - '국민내일배움카드(일반)' + 만족도 보유 과정만 골라 만족도순으로 큐레이션한다
-// 목적은 카탈로그가 아니라 "괜찮은 과정 추천"이다.
+//  - NCS 분야별로 나눠 조회해 분야 쏠림을 막는다
+//  - '국민내일배움카드' + 만족도가 집계된 과정만 골라 만족도순으로 큐레이션한다
+// 목적은 카탈로그가 아니라 "분야별 괜찮은 과정 추천"이다.
 
 import { str } from "./types";
+import { FETCH_NCS, ncsName } from "./ncs";
 
 const BASE =
   "https://www.work24.go.kr/cm/openApi/call/hr/callOpenApiSvcInfo310L01.do";
 
-const PAGES = 10; // 100건 x 10 = 1,000건을 훑어 그중에서 고른다
-const PAGE_SIZE = 100;
-export const MAX_COURSES = 120;
+const PAGE_SIZE = 100; // API 최대
+const PAGES_PER_NCS = 4; // 분야당 400건을 훑는다 (1페이지만 보면 걸러지고 남는 게 거의 없음)
+const PER_NCS = 14; // 분야당 최대 노출 수 (쏠림 방지)
 
 export type Course = {
   id: string;
@@ -28,7 +30,9 @@ export type Course = {
   score: number; // 만족도(100점)
   tel: string;
   url: string; // 고용24 상세
-  target: string; // 국민내일배움카드(일반) 등
+  target: string;
+  ncs1: string; // NCS 대분류 코드 2자리
+  field: string; // 분야명
 };
 
 const SIDO = [
@@ -36,7 +40,6 @@ const SIDO = [
   "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
 ];
 
-/** "경기 성남시 분당구" → "경기" / "전남광주 광산구" 같은 변형도 처리 */
 function toRegion(address: string): string {
   const head = str(address).split(/\s+/)[0] ?? "";
   return SIDO.find((s) => head.startsWith(s)) ?? SIDO.find((s) => head.includes(s)) ?? "";
@@ -44,7 +47,6 @@ function toRegion(address: string): string {
 
 const num = (v: string) => Number(str(v).replace(/[^\d.]/g, "")) || 0;
 
-// XML 파서 대신 태그 추출 (의존성 없이 가볍게)
 function pick(xml: string, tag: string): string {
   const m = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
   return m ? m[1].replace(/<!\[CDATA\[|\]\]>/g, "").trim() : "";
@@ -54,6 +56,7 @@ function parse(xml: string): Course[] {
   const blocks = xml.match(/<scn_list>[\s\S]*?<\/scn_list>/g) ?? [];
   return blocks.map((b) => {
     const address = pick(b, "address");
+    const ncs = pick(b, "ncsCd");
     return {
       id: `${pick(b, "trprId")}-${pick(b, "trprDegr")}`,
       title: pick(b, "title"),
@@ -69,6 +72,8 @@ function parse(xml: string): Course[] {
       tel: pick(b, "telNo"),
       url: pick(b, "titleLink").replace(/&amp;/g, "&"),
       target: pick(b, "trainTarget"),
+      ncs1: ncs.slice(0, 2),
+      field: ncsName(ncs),
     };
   });
 }
@@ -84,17 +89,18 @@ export async function fetchCourses(): Promise<Course[]> {
 
   const now = new Date();
   const until = new Date(now);
-  until.setMonth(until.getMonth() + 3); // 앞으로 3개월 내 시작하는 과정
+  until.setMonth(until.getMonth() + 3); // 앞으로 3개월 내 시작
 
-  const one = async (page: number) => {
+  const page = async (ncs: string, pageNum: number) => {
     const p = new URLSearchParams({
       authKey: key,
       returnType: "XML",
       outType: "1",
-      pageNum: String(page),
+      pageNum: String(pageNum),
       pageSize: String(PAGE_SIZE),
       srchTraStDt: ymd(now),
       srchTraEndDt: ymd(until),
+      srchNcs1: ncs,
       sort: "ASC",
       sortCol: "TRNG_BGDE",
     });
@@ -103,22 +109,42 @@ export async function fetchCourses(): Promise<Course[]> {
     return parse(await res.text());
   };
 
-  const results = await Promise.allSettled(
-    Array.from({ length: PAGES }, (_, i) => one(i + 1))
-  );
-  const all = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+  // NCS 분야별로 각각 조회 → 분야 쏠림 방지.
+  // 한 페이지(100건)만 보면 카드과정+만족도 조건을 통과하는 게 거의 없어서 여러 페이지를 훑는다.
+  const one = async (ncs: string) => {
+    const out: Course[] = [];
+    for (let i = 1; i <= PAGES_PER_NCS; i++) {
+      try {
+        out.push(...(await page(ncs, i)));
+      } catch {
+        break; // 그 분야만 중단, 나머지 분야는 계속
+      }
+    }
+    return out;
+  };
 
-  // 중복 제거
+  const results = await Promise.allSettled(FETCH_NCS.map(one));
+
   const seen = new Set<string>();
-  const uniq = all.filter((c) => {
-    if (!c.id || !c.title || seen.has(c.id)) return false;
-    seen.add(c.id);
-    return true;
-  });
+  const out: Course[] = [];
+  for (const r of results) {
+    if (r.status !== "fulfilled") continue;
+    const picked = r.value
+      .filter(
+        (c) =>
+          c.id &&
+          c.title &&
+          c.target.includes("국민내일배움카드") &&
+          c.score > 0 &&
+          !seen.has(c.id)
+      )
+      .sort((a, b) => b.score - a.score || a.start.localeCompare(b.start))
+      .slice(0, PER_NCS);
+    for (const c of picked) {
+      seen.add(c.id);
+      out.push(c);
+    }
+  }
 
-  // 큐레이션: 개인이 쓰는 내일배움카드 과정 + 만족도가 집계된 과정만
-  return uniq
-    .filter((c) => c.target.includes("국민내일배움카드") && c.score > 0)
-    .sort((a, b) => b.score - a.score || a.start.localeCompare(b.start))
-    .slice(0, MAX_COURSES);
+  return out.sort((a, b) => b.score - a.score || a.start.localeCompare(b.start));
 }
