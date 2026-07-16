@@ -82,12 +82,17 @@ function Card({ p }: { p: Policy }) {
   const dot = CAT_DOT[p.category] ?? "bg-ink-faint";
   const urgent = isUrgent(p.endDate);
   return (
-    <Link
-      href={`/policy/${p.id}`}
-      className={`block rounded-[12px] border bg-surface p-4 transition hover:shadow-soft ${
+    <div
+      className={`relative rounded-[12px] border bg-surface p-4 transition hover:shadow-soft ${
         urgent ? "border-accent-orange/50 ring-1 ring-accent-orange/25" : "border-hairline"
       }`}
     >
+      {/* 카드 전체 클릭 → 상세페이지 (원문 버튼만 예외) */}
+      <Link
+        href={`/policy/${p.id}`}
+        className="absolute inset-0 rounded-[12px]"
+        aria-label={`${p.title} 상세보기`}
+      />
       <div className="mb-1.5 flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-2 py-0.5 text-xs text-ink-secondary">
           <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
@@ -106,12 +111,20 @@ function Card({ p }: { p: Policy }) {
       {p.summary && (
         <p className="mb-2 line-clamp-2 text-sm text-ink-muted">{p.summary}</p>
       )}
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-faint">
         <span>{p.org}</span>
         {p.target && <span>대상 {p.target}</span>}
         {p.period && <span>{p.period}</span>}
+        <a
+          href={p.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative z-10 ml-auto shrink-0 rounded-lg border border-hairline px-2 py-1 font-medium text-primary transition hover:border-primary/40 hover:bg-primary/5"
+        >
+          원문 공고 ↗
+        </a>
       </div>
-    </Link>
+    </div>
   );
 }
 
