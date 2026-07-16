@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { PolicyListItem } from "@/lib/types";
 import {
+  EMPTY_INFO, isInfoSet, loadInfo, saveInfo, judge, ageOf, type MyInfo,
+} from "@/lib/eligibility";
+import { JOB_CHOICES, SCHOOL_CHOICES } from "@/lib/youth-codes";
+import { loadSaved, saveSaved } from "@/lib/saved";
+import {
   REGION_OPTIONS,
   TARGET_OPTIONS,
   INTEREST_OPTIONS,
@@ -85,7 +90,17 @@ function Chip({
   );
 }
 
-function Card({ p }: { p: PolicyListItem }) {
+function Card({
+  p,
+  saved,
+  onToggleSave,
+  verdict,
+}: {
+  p: PolicyListItem;
+  saved: boolean;
+  onToggleSave: (id: string) => void;
+  verdict?: "eligible" | "ineligible" | "unknown";
+}) {
   const dot = CAT_DOT[p.category] ?? "bg-ink-faint";
   const urgent = isUrgent(p.endDate);
   return (
@@ -110,8 +125,31 @@ function Card({ p }: { p: PolicyListItem }) {
             {r}
           </span>
         ))}
-        <span className="ml-auto">
+        {verdict === "eligible" && (
+          <span className="rounded-full bg-accent-green/15 px-2 py-0.5 text-xs font-medium text-accent-green">
+            받을 수 있어요
+          </span>
+        )}
+        {verdict === "ineligible" && (
+          <span className="rounded-full bg-ink-faint/15 px-2 py-0.5 text-xs text-ink-faint">
+            조건 불일치
+          </span>
+        )}
+        <span className="ml-auto flex items-center gap-2">
           <Dday endDate={p.endDate} />
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              onToggleSave(p.id);
+            }}
+            aria-pressed={saved}
+            aria-label={saved ? "관심공고 해제" : "관심공고 저장"}
+            className={`relative z-10 text-base leading-none ${
+              saved ? "text-accent-orange" : "text-ink-faint hover:text-accent-orange"
+            }`}
+          >
+            {saved ? "★" : "☆"}
+          </button>
         </span>
       </div>
       <h3 className="mb-1 font-semibold leading-snug text-ink">{p.title}</h3>
@@ -155,6 +193,10 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
   const [regionFilter, setRegionFilter] = useState("");
   const [showProfile, setShowProfile] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<"" | PolicyListItem["source"]>("");
+  const [myInfo, setMyInfo] = useState<MyInfo>(EMPTY_INFO);
+  const [eligOnly, setEligOnly] = useState(false);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -163,15 +205,28 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     setProfile(loadProfile());
+    setMyInfo(loadInfo());
+    setSavedIds(loadSaved());
     setLoaded(true);
   }, []);
   useEffect(() => {
     if (loaded) saveProfile(profile);
   }, [profile, loaded]);
+  useEffect(() => {
+    if (loaded) saveInfo(myInfo);
+  }, [myInfo, loaded]);
   // 필터/페이지 크기가 바뀌면 1페이지로 초기화
   useEffect(() => {
     setPage(1);
-  }, [q, hideExpired, profile, regionFilter, sourceFilter, perPage]);
+  }, [q, hideExpired, profile, regionFilter, sourceFilter, perPage, eligOnly, savedOnly, myInfo]);
+
+  const toggleSave = (id: string) => {
+    const next = savedIds.includes(id)
+      ? savedIds.filter((x) => x !== id)
+      : [...savedIds, id];
+    setSavedIds(next);
+    saveSaved(next);
+  };
 
   const toggle = (key: "targets" | "interests", v: string) =>
     setProfile((p) => ({
@@ -184,6 +239,9 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
     const kw = q.trim().toLowerCase();
     return policies
       .filter((p) => {
+        if (savedOnly && !savedIds.includes(p.id)) return false;
+        if (eligOnly && isInfoSet(myInfo) && judge(p, myInfo).verdict === "ineligible")
+          return false;
         if (isProfileSet(profile) && !matchPolicy(p, profile)) return false;
         if (hideExpired) {
           const d = daysLeft(p.endDate);
@@ -202,7 +260,7 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
         const vb = db === null || db < 0 ? Infinity : db;
         return va - vb;
       });
-  }, [policies, q, hideExpired, profile]);
+  }, [policies, q, hideExpired, profile, eligOnly, myInfo, savedOnly, savedIds]);
 
   // 소스별 건수 (버튼용)
   const sourceCounts = useMemo(() => {
@@ -306,9 +364,79 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
                 ))}
               </div>
             </div>
-            {profileSet && (
+            {/* 자격 자가진단 */}
+            <div className="border-t border-hairline pt-4">
+              <p className="mb-1 text-xs font-semibold text-ink-muted">
+                자격 자가진단 <span className="font-normal">(청년정책에 적용)</span>
+              </p>
+              <p className="mb-3 text-xs text-ink-faint">
+                입력하면 조건이 맞는 공고에 &quot;받을 수 있어요&quot; 표시가 붙습니다.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="출생연도 (예: 1998)"
+                  aria-label="출생연도"
+                  value={myInfo.birthYear ?? ""}
+                  onChange={(e) =>
+                    setMyInfo((m) => ({
+                      ...m,
+                      birthYear: e.target.value ? Number(e.target.value) : null,
+                    }))
+                  }
+                  className="w-40 rounded border border-hairline bg-surface px-3 py-1.5 text-sm text-ink"
+                />
+                <select
+                  aria-label="취업 상태"
+                  value={myInfo.job}
+                  onChange={(e) => setMyInfo((m) => ({ ...m, job: e.target.value }))}
+                  className="rounded border border-hairline bg-surface px-3 py-1.5 text-sm text-ink"
+                >
+                  <option value="">취업상태</option>
+                  {JOB_CHOICES.map((j) => (
+                    <option key={j}>{j}</option>
+                  ))}
+                </select>
+                <select
+                  aria-label="학력"
+                  value={myInfo.school}
+                  onChange={(e) => setMyInfo((m) => ({ ...m, school: e.target.value }))}
+                  className="rounded border border-hairline bg-surface px-3 py-1.5 text-sm text-ink"
+                >
+                  <option value="">학력</option>
+                  {SCHOOL_CHOICES.map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="연소득(만원)"
+                  aria-label="연소득(만원)"
+                  value={myInfo.income ?? ""}
+                  onChange={(e) =>
+                    setMyInfo((m) => ({
+                      ...m,
+                      income: e.target.value ? Number(e.target.value) : null,
+                    }))
+                  }
+                  className="w-36 rounded border border-hairline bg-surface px-3 py-1.5 text-sm text-ink"
+                />
+              </div>
+              {myInfo.birthYear && (
+                <p className="mt-2 text-xs text-ink-muted">
+                  만 {ageOf(myInfo.birthYear)}세로 계산합니다.
+                </p>
+              )}
+            </div>
+
+            {(profileSet || isInfoSet(myInfo)) && (
               <button
-                onClick={() => setProfile(EMPTY_PROFILE)}
+                onClick={() => {
+                  setProfile(EMPTY_PROFILE);
+                  setMyInfo(EMPTY_INFO);
+                }}
                 className="text-xs text-ink-faint underline"
               >
                 내 정보 초기화
@@ -360,6 +488,28 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
             }`}
           >
             지역별 보기
+          </button>
+          {isInfoSet(myInfo) && (
+            <button
+              onClick={() => setEligOnly((v) => !v)}
+              className={`rounded-lg px-3 py-1.5 font-medium transition ${
+                eligOnly
+                  ? "bg-accent-green text-white"
+                  : "border border-hairline bg-surface text-ink-muted"
+              }`}
+            >
+              받을 수 있는 것만
+            </button>
+          )}
+          <button
+            onClick={() => setSavedOnly((v) => !v)}
+            className={`rounded-lg px-3 py-1.5 font-medium transition ${
+              savedOnly
+                ? "bg-accent-orange text-white"
+                : "border border-hairline bg-surface text-ink-muted"
+            }`}
+          >
+            ★ 관심공고 {savedIds.length > 0 && savedIds.length}
           </button>
           <label className="flex items-center gap-1.5 text-ink-muted">
             <input
@@ -431,7 +581,12 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
       <ul className="space-y-3">
         {paged.map((p) => (
           <li key={p.id}>
-            <Card p={p} />
+            <Card
+              p={p}
+              saved={savedIds.includes(p.id)}
+              onToggleSave={toggleSave}
+              verdict={isInfoSet(myInfo) ? judge(p, myInfo).verdict : undefined}
+            />
           </li>
         ))}
       </ul>

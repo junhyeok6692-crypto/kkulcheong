@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPolicy } from "@/lib/policies";
+import { getPolicy, getRelated } from "@/lib/policies";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { SITE_URL } from "@/lib/site";
+import PolicyActions from "@/components/PolicyActions";
 
 export const revalidate = 3600;
 
@@ -63,6 +64,7 @@ export default async function PolicyDetail({ params }: Props) {
   const { id } = await params;
   const p = await getPolicy(id);
   if (!p) notFound();
+  const related = await getRelated(id, 5);
 
   const d = daysLeft(p.endDate);
   const urgent = d !== null && d >= 0 && d <= 5;
@@ -157,6 +159,15 @@ export default async function PolicyDetail({ params }: Props) {
           ))}
         </dl>
 
+        {/* 찜 + 캘린더 */}
+        <PolicyActions
+          id={p.id}
+          title={p.title}
+          endDate={p.endDate}
+          org={p.org}
+          url={p.url}
+        />
+
         {/* 사업개요 */}
         {p.summaryFull && (
           <section className="mb-6">
@@ -223,6 +234,36 @@ export default async function PolicyDetail({ params }: Props) {
             {p.source} 원문 공고 보기
           </a>
         </div>
+
+        {/* 이런 공고는 어때요 */}
+        {related.length > 0 && (
+          <section className="mb-6">
+            <h2 className="mb-3 text-lg font-bold text-ink">이런 지원사업도 있어요</h2>
+            <ul className="space-y-2">
+              {related.map((r) => (
+                <li key={r.id}>
+                  <Link
+                    href={`/policy/${r.id}`}
+                    className="block rounded-[12px] border border-hairline bg-surface p-3 transition hover:shadow-soft"
+                  >
+                    <div className="mb-1 flex items-center gap-2 text-xs text-ink-muted">
+                      <span className="rounded-full border border-hairline px-2 py-0.5">
+                        {r.category}
+                      </span>
+                      {r.regions.slice(0, 1).map((x) => (
+                        <span key={x}>{x}</span>
+                      ))}
+                      {r.period && <span className="ml-auto">{r.period}</span>}
+                    </div>
+                    <p className="text-sm font-medium leading-snug text-ink">
+                      {r.title}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <p className="rounded-lg bg-surface px-4 py-3 text-xs leading-relaxed text-ink-faint ring-1 ring-hairline">
           이 페이지는 {p.source}의 공개 데이터를 보기 쉽게 정리한 것입니다. 신청

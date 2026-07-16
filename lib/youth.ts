@@ -3,11 +3,15 @@
 
 import {
   type Policy,
+  type Eligibility,
   htmlToText,
   str,
   safeUrl,
   collapseNationwide,
 } from "./types";
+import {
+  EARN_CND, JOB_CD, SCHOOL_CD, MARRIAGE_CD, SPECIAL_CD, codeNames,
+} from "./youth-codes";
 
 // 법정동코드 앞 2자리 → 시·도
 const SIDO: Record<string, string> = {
@@ -86,6 +90,19 @@ function normalize(it: Record<string, unknown>): Policy {
   const ref = safeUrl(it.refUrlAddr1);
   if (ref) extra.push({ label: "참고 링크", value: ref });
 
+  const elig: Eligibility = {
+    minAge: ageLimitNone ? null : minAge || null,
+    maxAge: ageLimitNone ? null : maxAge || null,
+    ageLimitNone,
+    earnKind: codeNames(str(it.earnCndSeCd), EARN_CND)[0] ?? "무관",
+    earnMin: Number(it.earnMinAmt) || 0,
+    earnMax: Number(it.earnMaxAmt) || 0,
+    jobs: codeNames(str(it.jobCd), JOB_CD),
+    schools: codeNames(str(it.schoolCd), SCHOOL_CD),
+    marriage: codeNames(str(it.mrgSttsCd), MARRIAGE_CD),
+    specials: codeNames(str(it.sbizCd), SPECIAL_CD),
+  };
+
   return {
     id: `YTH-${no}`,
     source: "온통청년",
@@ -109,6 +126,7 @@ function normalize(it: Record<string, unknown>): Policy {
     createdAt: str(it.frstRegDt),
     views: Number(it.inqCnt) || 0,
     extra,
+    elig,
   };
 }
 

@@ -25,6 +25,21 @@ export type Policy = {
   createdAt: string;
   views: number;
   extra?: { label: string; value: string }[]; // 소스별 추가 정보(상세페이지 표)
+  elig?: Eligibility; // 자격 조건 (청년정책만 제공)
+};
+
+/** 자격 자가진단용 조건. 값이 없으면 '조건 없음'으로 본다. */
+export type Eligibility = {
+  minAge: number | null;
+  maxAge: number | null;
+  ageLimitNone: boolean;
+  earnKind: string; // 무관 | 연소득 | 기타
+  earnMin: number; // 만원
+  earnMax: number; // 만원
+  jobs: string[]; // 재직자, 미취업자 ...
+  schools: string[]; // 대학 재학, 대졸 ...
+  marriage: string[]; // 기혼 | 미혼 | 제한없음
+  specials: string[]; // 여성, 장애인 ...
 };
 
 // 목록 화면에 필요한 필드만 추린 형태.
@@ -44,6 +59,7 @@ export type PolicyListItem = Pick<
   | "url"
   | "period"
   | "endDate"
+  | "elig"
 >;
 
 export function toListItem(p: Policy): PolicyListItem {
@@ -60,6 +76,7 @@ export function toListItem(p: Policy): PolicyListItem {
     url: p.url,
     period: p.period,
     endDate: p.endDate,
+    elig: p.elig,
   };
 }
 
