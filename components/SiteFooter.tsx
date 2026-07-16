@@ -6,6 +6,9 @@ export default function SiteFooter() {
     <footer className="mt-12 border-t border-hairline bg-canvas">
       <div className="mx-auto max-w-3xl px-4 py-8 text-center text-xs text-ink-faint">
         <nav className="mb-3 flex flex-wrap justify-center gap-x-4 gap-y-2">
+          <Link href="/training" className="hover:text-primary">
+            훈련과정
+          </Link>
           <Link href="/guide" className="hover:text-primary">
             가이드
           </Link>
@@ -23,8 +26,7 @@ export default function SiteFooter() {
           </Link>
         </nav>
         <p>
-          데이터 출처: 기업마당(bizinfo.go.kr) · 온통청년(youthcenter.go.kr) ·
-          1시간마다 자동 갱신
+          데이터 출처: 기업마당 · 온통청년 · K-Startup · 고용24 · 1시간마다 자동 갱신
         </p>
         <p className="mt-1">
           © 2026 꿀청 · 공고의 최종 내용은 각 기관의 원문 공고를 확인해 주세요.

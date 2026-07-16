@@ -15,6 +15,7 @@ function toDate(s: string): Date {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${BASE}/`, changeFrequency: "hourly", priority: 1 },
+    { url: `${BASE}/training`, changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE}/guide`, changeFrequency: "monthly", priority: 0.7 },
     ...GUIDES.map((g) => ({
       url: `${BASE}/guide/${g.slug}`,

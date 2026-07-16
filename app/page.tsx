@@ -82,6 +82,12 @@ export default async function Home() {
           >
             신청 전 알아두기 · 지원사업 가이드 →
           </Link>
+          <Link
+            href="/training"
+            className="mt-6 ml-2 inline-block rounded-full border border-[#c9a24a] bg-white/60 px-4 py-2 text-sm font-medium text-[#4a330a] transition hover:bg-white"
+          >
+            내일배움카드 훈련과정 →
+          </Link>
         </div>
       </section>
 
