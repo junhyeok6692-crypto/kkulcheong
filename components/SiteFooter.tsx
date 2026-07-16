@@ -22,7 +22,10 @@ export default function SiteFooter() {
             문의
           </Link>
         </nav>
-        <p>데이터 출처: 기업마당(bizinfo.go.kr) · 1시간마다 자동 갱신</p>
+        <p>
+          데이터 출처: 기업마당(bizinfo.go.kr) · 온통청년(youthcenter.go.kr) ·
+          1시간마다 자동 갱신
+        </p>
         <p className="mt-1">
           © 2026 꿀청 · 공고의 최종 내용은 각 기관의 원문 공고를 확인해 주세요.
         </p>

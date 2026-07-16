@@ -131,8 +131,8 @@ export default function Privacy() {
           <h2 className="mb-2 text-lg font-bold text-ink">9. 문의</h2>
           <p className="text-[15px] leading-relaxed text-ink-secondary">
             본 방침에 대한 문의는{" "}
-            <a className="text-primary hover:underline" href="mailto:devohjic@gmail.com">
-              devohjic@gmail.com
+            <a className="text-primary hover:underline" href="mailto:junhyeok6692@gmail.com">
+              junhyeok6692@gmail.com
             </a>
             으로 연락해 주세요.
           </p>

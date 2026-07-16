@@ -25,10 +25,10 @@ export default function Contact() {
         <div className="mb-8 rounded-[12px] border border-hairline bg-surface p-5">
           <p className="mb-1 text-xs text-ink-faint">이메일</p>
           <a
-            href="mailto:devohjic@gmail.com"
+            href="mailto:junhyeok6692@gmail.com"
             className="text-lg font-semibold text-primary hover:underline"
           >
-            devohjic@gmail.com
+            junhyeok6692@gmail.com
           </a>
           <p className="mt-3 text-sm leading-relaxed text-ink-muted">
             보통 영업일 기준 2~3일 이내에 답변드립니다.

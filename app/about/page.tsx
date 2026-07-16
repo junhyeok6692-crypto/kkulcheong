@@ -55,18 +55,38 @@ export default function About() {
         <section className="mb-8">
           <h2 className="mb-3 text-lg font-bold text-ink">데이터 출처</h2>
           <p className="text-[15px] leading-relaxed text-ink-secondary">
-            중소벤처기업부{" "}
-            <a
-              className="text-primary hover:underline"
-              href="https://www.bizinfo.go.kr"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              기업마당(bizinfo.go.kr)
-            </a>
-            의 공개 오픈API를 사용합니다. 꿀청은 지원사업의 운영 주체가 아니며,
-            신청·심사·지급 등 행정 절차에는 관여하지 않습니다. 최종 내용은 반드시
-            각 기관의 원문 공고를 확인해 주세요.
+            아래 공공기관이 공개한 오픈API를 사용합니다.
+          </p>
+          <ul className="mt-2 mb-3 list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-ink-secondary">
+            <li>
+              중소벤처기업부{" "}
+              <a
+                className="text-primary hover:underline"
+                href="https://www.bizinfo.go.kr"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                기업마당(bizinfo.go.kr)
+              </a>{" "}
+              — 정부지원사업 공고
+            </li>
+            <li>
+              한국고용정보원{" "}
+              <a
+                className="text-primary hover:underline"
+                href="https://www.youthcenter.go.kr"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                온통청년(youthcenter.go.kr)
+              </a>{" "}
+              — 청년정책
+            </li>
+          </ul>
+          <p className="text-[15px] leading-relaxed text-ink-secondary">
+            꿀청은 지원사업의 운영 주체가 아니며, 신청·심사·지급 등 행정 절차에는
+            관여하지 않습니다. 최종 내용은 반드시 각 기관의 원문 공고를 확인해
+            주세요.
           </p>
         </section>
 
