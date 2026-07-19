@@ -77,8 +77,7 @@ export default async function PolicyDetail({ params }: Props) {
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "홈", item: BASE },
-        { "@type": "ListItem", position: 2, name: p.category },
-        { "@type": "ListItem", position: 3, name: p.title },
+        { "@type": "ListItem", position: 2, name: p.title },
       ],
     },
     {
