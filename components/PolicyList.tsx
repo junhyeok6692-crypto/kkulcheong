@@ -59,7 +59,7 @@ const CAT_DOT: Record<string, string> = {
 // 마감까지 남은 일수 (null이면 상시/미정)
 function daysLeft(endDate: string | null): number | null {
   if (!endDate) return null;
-  const end = new Date(endDate + "T23:59:59");
+  const end = new Date(endDate + "T23:59:59+09:00");
   const now = new Date();
   return Math.ceil((end.getTime() - now.getTime()) / 86400000);
 }
