@@ -6,6 +6,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { SITE_URL } from "@/lib/site";
 import PolicyActions from "@/components/PolicyActions";
+import { daysLeft } from "@/lib/types";
 
 export const revalidate = 3600;
 
@@ -25,11 +26,6 @@ const CAT_DOT: Record<string, string> = {
   "참여･기반": "bg-accent-green",
 };
 
-function daysLeft(endDate: string | null): number | null {
-  if (!endDate) return null;
-  const end = new Date(endDate + "T23:59:59+09:00");
-  return Math.ceil((end.getTime() - Date.now()) / 86400000);
-}
 
 type Props = { params: Promise<{ id: string }> };
 
