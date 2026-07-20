@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { PolicyListItem } from "@/lib/types";
+import { daysLeft } from "@/lib/types";
 import {
   EMPTY_INFO, isInfoSet, loadInfo, saveInfo, judge, ageOf, type MyInfo,
 } from "@/lib/eligibility";
@@ -56,13 +57,6 @@ const CAT_DOT: Record<string, string> = {
   "행사ㆍ네트워크": "bg-accent-brown",
 };
 
-// 마감까지 남은 일수 (null이면 상시/미정)
-function daysLeft(endDate: string | null): number | null {
-  if (!endDate) return null;
-  const end = new Date(endDate + "T23:59:59+09:00");
-  const now = new Date();
-  return Math.ceil((end.getTime() - now.getTime()) / 86400000);
-}
 
 // 마감임박 기준: D-5 이내
 const URGENT_DAYS = 5;
