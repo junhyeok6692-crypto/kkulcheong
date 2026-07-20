@@ -27,7 +27,7 @@ async function fetchAll(): Promise<Policy[]> {
   const rank = (p: Policy) => {
     if (!p.endDate) return Infinity;
     const d = Math.ceil(
-      (new Date(p.endDate + "T23:59:59").getTime() - Date.now()) / 86400000
+      (new Date(p.endDate + "T23:59:59+09:00").getTime() - Date.now()) / 86400000
     );
     return d < 0 ? Infinity : d;
   };
@@ -65,7 +65,7 @@ export async function getRelated(id: string, limit = 5): Promise<Policy[]> {
   const now = Date.now();
   const dleft = (p: Policy) =>
     p.endDate
-      ? Math.ceil((new Date(p.endDate + "T23:59:59").getTime() - now) / 86400000)
+      ? Math.ceil((new Date(p.endDate + "T23:59:59+09:00").getTime() - now) / 86400000)
       : null;
 
   return all
