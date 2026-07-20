@@ -124,3 +124,14 @@ export function collapseNationwide(regions: string[]): string[] {
   const r = [...new Set(regions)];
   return r.filter((x) => x !== "전국").length >= 8 ? ["전국"] : r;
 }
+
+// 마감일까지 남은 일수(KST 자정 기준 캘린더 일수 차이).
+// 시/분/초 오차 없이 "오늘이 며칠인지"만으로 비교해야
+// 마감 당일은 정확히 D-0, 그다음 날부터 음수(마감)가 되도록 보장된다.
+export function daysLeft(endDate: string | null): number | null {
+  if (!endDate) return null;
+  const end = new Date(`${endDate}T00:00:00+09:00`);
+  const kstTodayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+  const today = new Date(`${kstTodayStr}T00:00:00+09:00`);
+  return Math.round((end.getTime() - today.getTime()) / 86400000);
+}
