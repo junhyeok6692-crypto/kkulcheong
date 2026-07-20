@@ -27,7 +27,7 @@ const CAT_DOT: Record<string, string> = {
 
 function daysLeft(endDate: string | null): number | null {
   if (!endDate) return null;
-  const end = new Date(endDate + "T23:59:59");
+  const end = new Date(endDate + "T23:59:59+09:00");
   return Math.ceil((end.getTime() - Date.now()) / 86400000);
 }
 
