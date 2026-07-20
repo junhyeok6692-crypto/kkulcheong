@@ -1,6 +1,7 @@
 // 여러 소스를 합쳐 하나의 목록으로 제공 (+ 메모리 캐시)
 
 import type { Policy } from "./types";
+import { daysLeft } from "./types";
 import { fetchBizinfoPolicies } from "./bizinfo";
 import { fetchYouthPolicies } from "./youth";
 import { fetchKstartupPolicies } from "./kstartup";
@@ -25,10 +26,8 @@ async function fetchAll(): Promise<Policy[]> {
 
   // 마감임박순 (상시/마감은 뒤로)
   const rank = (p: Policy) => {
-    if (!p.endDate) return Infinity;
-    const d = Math.ceil(
-      (new Date(p.endDate + "T23:59:59+09:00").getTime() - Date.now()) / 86400000
-    );
+    const d = daysLeft(p.endDate);
+    if (d === null) return Infinity;
     return d < 0 ? Infinity : d;
   };
   return merged.sort((a, b) => rank(a) - rank(b));
@@ -62,11 +61,7 @@ export async function getRelated(id: string, limit = 5): Promise<Policy[]> {
   const me = all.find((p) => p.id === id);
   if (!me) return [];
 
-  const now = Date.now();
-  const dleft = (p: Policy) =>
-    p.endDate
-      ? Math.ceil((new Date(p.endDate + "T23:59:59+09:00").getTime() - now) / 86400000)
-      : null;
+  const dleft = (p: Policy) => daysLeft(p.endDate);
 
   return all
     .filter((p) => {
