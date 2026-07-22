@@ -45,9 +45,12 @@ export async function GET(req: Request) {
       { headers: { "Cache-Control": "public, max-age=300" } }
     );
   } catch (e) {
+    // 내부 오류 상세(e.message)는 로그로만 남기고, 응답에는 그대로 노출하지 않는다.
+    console.error("[api/policies] 오류:", e);
     return Response.json(
-      { error: e instanceof Error ? e.message : "데이터를 불러오지 못했습니다." },
+      { error: "데이터를 불러오지 못했습니다." },
       { status: 502 }
     );
   }
 }
+
