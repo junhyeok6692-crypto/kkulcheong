@@ -134,9 +134,10 @@ export async function fetchYouthPolicies(): Promise<Policy[]> {
   const key = process.env.YOUTH_API_KEY;
   if (!key) return []; // 키가 없으면 이 소스만 조용히 건너뜀
 
-  // pageSize=3000이면 응답이 2MB를 넘어 Next fetch 캐시가 적용되지 않아 1500으로 줄였다
-  // (매 콜드스타트마다 3000건 전체를 다시 받아오면서 상세페이지 로딩이 느려지는 원인이었다).
-  const url = `https://www.youthcenter.go.kr/go/ythip/getPlcy?apiKeyNm=${key}&pageNum=1&pageSize=1500&rtnType=json`;
+  // 실측 결과 pageSize=1500일 때도 응답이 약 3.83MB로 Next fetch 캐시 한도(2MB)를
+  // 훌쩍 넘어 캐시가 전혀 적용되지 않고 있었다(콜드 인스턴스마다 4~5초씩 걸리는 원인).
+  // pageSize=700(약 1.7MB)로 줄여 실제로 캐시가 걸리도록 했다.
+  const url = `https://www.youthcenter.go.kr/go/ythip/getPlcy?apiKeyNm=${key}&pageNum=1&pageSize=700&rtnType=json`;
   const res = await fetch(url, { next: { revalidate: 3600 } });
   if (!res.ok) throw new Error(`온통청년 API 오류: ${res.status}`);
 
@@ -147,4 +148,5 @@ export async function fetchYouthPolicies(): Promise<Policy[]> {
   const items = json.result?.youthPolicyList ?? [];
   return items.map(normalize).filter((p) => p.title && p.id !== "YTH-");
 }
+
 
