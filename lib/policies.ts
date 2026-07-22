@@ -10,6 +10,8 @@ const TTL_MS = 60 * 60 * 1000; // 1시간
 let cache: { at: number; data: Policy[] } | null = null;
 let inflight: Promise<Policy[]> | null = null;
 
+const CAPITAL_REGIONS = ["서울", "인천", "경기"];
+
 async function fetchAll(): Promise<Policy[]> {
   // 한 소스가 실패해도 나머지는 살린다
   const results = await Promise.allSettled([
@@ -24,13 +26,22 @@ async function fetchAll(): Promise<Policy[]> {
     else console.error("[policies] 소스 수집 실패:", r.reason);
   }
 
-  // 마감임박순 (상시/마감은 뒤로)
+  // 마감임박순 (상시/마감은 뒤로), 같은 마감일이면 수도권(서울·인천·경기) 우선
   const rank = (p: Policy) => {
     const d = daysLeft(p.endDate);
     if (d === null) return Infinity;
     return d < 0 ? Infinity : d;
   };
-  return merged.sort((a, b) => rank(a) - rank(b));
+  const isCapital = (p: Policy) =>
+    p.regions.some((r) => CAPITAL_REGIONS.includes(r));
+  return merged.sort((a, b) => {
+    const diff = rank(a) - rank(b);
+    if (diff !== 0) return diff;
+    const ca = isCapital(a);
+    const cb = isCapital(b);
+    if (ca !== cb) return ca ? -1 : 1;
+    return 0;
+  });
 }
 
 export async function getAllPolicies(): Promise<Policy[]> {
