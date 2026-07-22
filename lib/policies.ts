@@ -52,8 +52,34 @@ export async function getPolicy(id: string): Promise<Policy | null> {
   return all.find((p) => p.id === id) ?? null;
 }
 
+// 서로 다른 분야라도 실제로 같이 신청하면 시너지가 있는 조합.
+// (예: 직업훈련을 받는 사람은 훈련 기간 생활비 지원과, 창업을 준비하는 사람은
+// 자금·인력 지원과 함께 보면 도움이 되는 경우가 많다는 실무 판단을 반영)
+// 값은 대칭이 아니어도 된다 — getRelated에서 양방향으로 조회한다.
+const COMPLEMENTARY_CATEGORIES: Record<string, string[]> = {
+  창업: ["금융", "기술", "인력"],
+  금융: ["창업", "경영"],
+  기술: ["창업", "수출"],
+  경영: ["금융", "인력", "내수"],
+  인력: ["창업", "경영", "교육･직업훈련"],
+  수출: ["기술", "경영"],
+  내수: ["경영"],
+  일자리: ["교육･직업훈련", "창업"],
+  주거: ["일자리"],
+  "교육･직업훈련": ["일자리", "인력"],
+  "금융･복지･문화": ["일자리", "주거"],
+  "참여･기반": ["교육･직업훈련"],
+};
+
+function isComplementary(a: string, b: string): boolean {
+  return (
+    (COMPLEMENTARY_CATEGORIES[a] ?? []).includes(b) ||
+    (COMPLEMENTARY_CATEGORIES[b] ?? []).includes(a)
+  );
+}
+
 /**
- * 유사 정책 추천 — 같은 분야 > 같은 지역 > 마감임박 순으로 점수를 매긴다.
+ * 유사 정책 추천 — 같은 분야 > 태그 겹침 > 보완 분야 > 같은 지역 > 마감임박 순으로 점수를 매긴다.
  * 상세페이지 하단에 노출해 다음 공고로 이어지게 한다.
  */
 export async function getRelated(id: string, limit = 5): Promise<Policy[]> {
@@ -73,6 +99,16 @@ export async function getRelated(id: string, limit = 5): Promise<Policy[]> {
       let score = 0;
       if (p.category === me.category) score += 10;
       if (p.source === me.source) score += 2;
+
+      // 태그 겹침 (분야는 달라도 실제 내용이 비슷한 경우를 잡아낸다)
+      const sharedTags = p.tags.filter((t) => me.tags.includes(t)).length;
+      score += Math.min(sharedTags, 3) * 3;
+
+      // 분야는 다르지만 같이 신청하면 시너지가 있는 조합
+      if (p.category !== me.category && isComplementary(me.category, p.category)) {
+        score += 6;
+      }
+
       const shared = p.regions.filter((r) => me.regions.includes(r)).length;
       score += Math.min(shared, 2) * 4;
       if (me.regions.length === 0 || p.regions.includes("전국")) score += 1;
