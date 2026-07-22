@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type { Course } from "@/lib/training";
 import { APTITUDES } from "@/lib/ncs";
 
@@ -188,12 +189,13 @@ export default function CourseList({ courses }: { courses: Course[] }) {
       <ul className="space-y-3">
         {paged.map((c) => (
           <li key={c.id}>
-            <a
-              href={c.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-[12px] border border-hairline bg-surface p-4 transition hover:shadow-soft"
-            >
+            <div className="relative rounded-[12px] border border-hairline bg-surface p-4 transition hover:shadow-soft">
+              {/* 카드 전체 클릭 → 상세페이지 (고용24 버튼만 예외) */}
+              <Link
+                href={`/training/${c.id}`}
+                className="absolute inset-0 rounded-[12px]"
+                aria-label={`${c.title} 상세보기`}
+              />
               <div className="mb-1.5 flex flex-wrap items-center gap-2">
                 {c.score > 0 && (
                   <span className="rounded-full bg-accent-green/15 px-2 py-0.5 text-xs font-semibold text-accent-green">
@@ -224,11 +226,17 @@ export default function CourseList({ courses }: { courses: Course[] }) {
                   </span>
                 )}
                 {c.tel && <span>{c.tel}</span>}
-                <span className="ml-auto font-medium text-primary">
+                <a
+                  href={c.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative z-10 ml-auto shrink-0 rounded-lg border border-hairline px-2 py-1 font-medium text-primary transition hover:border-primary/40 hover:bg-primary/5"
+                >
                   고용24에서 보기 ↗
-                </span>
+                </a>
               </div>
-            </a>
+            </div>
           </li>
         ))}
       </ul>
@@ -281,3 +289,4 @@ export default function CourseList({ courses }: { courses: Course[] }) {
     </div>
   );
 }
+
