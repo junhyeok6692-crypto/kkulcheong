@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPolicy, getRelated } from "@/lib/policies";
 import SiteHeader from "@/components/SiteHeader";
@@ -25,7 +26,6 @@ const CAT_DOT: Record<string, string> = {
   "금융･복지･문화": "bg-accent-pink",
   "참여･기반": "bg-accent-green",
 };
-
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -56,8 +56,27 @@ function Row({ label, value }: { label: string; value: string }) {
 
 const BASE = SITE_URL;
 
-export default async function PolicyDetail({ params }: Props) {
-  const { id } = await params;
+// 데이터(외부 API 3곳 fetch)가 준비되는 동안 보여줄 뼈대 — 실제 레이아웃과
+// 크기를 맞춰 콘텐츠가 들어올 때 화면이 출렁이지 않도록 한다.
+function DetailSkeleton() {
+  return (
+    <div className="mx-auto max-w-3xl animate-pulse px-4 py-8">
+      <div className="mb-4 h-3 w-24 rounded bg-surface" />
+      <div className="mb-3 flex gap-2">
+        <div className="h-5 w-16 rounded-full bg-surface" />
+        <div className="h-5 w-12 rounded-full bg-surface" />
+      </div>
+      <div className="mb-4 h-8 w-3/4 rounded bg-surface" />
+      <div className="mb-6 h-40 rounded-[12px] bg-surface" />
+      <div className="mb-3 h-6 w-32 rounded bg-surface" />
+      <div className="h-24 rounded bg-surface" />
+    </div>
+  );
+}
+
+// 실제 데이터 의존 콘텐츠 — Suspense로 감싸 헤더/푸터는 즉시 렌더링되고
+// 이 부분만 데이터가 준비되는 대로 스트리밍되어 채워진다.
+async function PolicyContent({ id }: { id: string }) {
   const p = await getPolicy(id);
   if (!p) notFound();
   const related = await getRelated(id, 5);
@@ -66,7 +85,6 @@ export default async function PolicyDetail({ params }: Props) {
   const urgent = d !== null && d >= 0 && d <= 5;
   const dot = CAT_DOT[p.category] ?? "bg-ink-faint";
 
-  // 구조화 데이터 (검색결과에 경로 노출 + 서비스 정보 전달)
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -90,7 +108,7 @@ export default async function PolicyDetail({ params }: Props) {
   ];
 
   return (
-    <main>
+    <article className="mx-auto max-w-3xl px-4 py-8">
       {/* </script> 로 빠져나가는 것을 막기 위해 < 를 이스케이프 */}
       <script
         type="application/ld+json"
@@ -98,181 +116,190 @@ export default async function PolicyDetail({ params }: Props) {
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <SiteHeader />
 
-      <article className="mx-auto max-w-3xl px-4 py-8">
-        {/* breadcrumb */}
-        <nav className="mb-4 text-xs text-ink-faint">
-          <Link href="/" className="hover:text-primary">
-            홈
-          </Link>
-          <span className="mx-1.5">›</span>
-          <span>{p.category}</span>
-        </nav>
+      {/* breadcrumb */}
+      <nav className="mb-4 text-xs text-ink-faint">
+        <Link href="/" className="hover:text-primary">
+          홈
+        </Link>
+        <span className="mx-1.5">›</span>
+        <span>{p.category}</span>
+      </nav>
 
-        {/* 태그 + 마감 */}
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-2 py-0.5 text-xs text-ink-secondary">
-            <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-            {p.category}
+      {/* 태그 + 마감 */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-2 py-0.5 text-xs text-ink-secondary">
+          <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+          {p.category}
+        </span>
+        {p.regions.map((r) => (
+          <span
+            key={r}
+            className="rounded-full bg-surface px-2 py-0.5 text-xs text-ink-muted ring-1 ring-hairline"
+          >
+            {r}
           </span>
-          {p.regions.map((r) => (
-            <span
-              key={r}
-              className="rounded-full bg-surface px-2 py-0.5 text-xs text-ink-muted ring-1 ring-hairline"
-            >
-              {r}
-            </span>
-          ))}
-          {d === null ? (
-            <span className="text-xs text-ink-faint">상시·미정</span>
-          ) : d < 0 ? (
-            <span className="text-xs text-ink-faint">마감됨</span>
-          ) : urgent ? (
-            <span className="rounded-full bg-accent-orange px-2 py-0.5 text-xs font-semibold text-white">
-              마감임박 D-{d}
-            </span>
-          ) : (
-            <span className="text-xs font-medium text-ink-muted">D-{d}</span>
-          )}
-        </div>
-
-        <h1 className="mb-4 text-2xl font-bold leading-snug tracking-[-0.02em] text-ink sm:text-3xl">
-          {p.title}
-        </h1>
-
-        {/* 핵심 정보 */}
-        <dl className="mb-6 rounded-[12px] border border-hairline bg-surface px-4 py-1">
-          <Row label="소관기관" value={p.org} />
-          <Row label="수행기관" value={p.execOrg} />
-          <Row label="지원대상" value={p.target} />
-          <Row label="신청기간" value={p.period} />
-          <Row label="지원분야" value={p.category} />
-          {/* 소스별 추가 정보 (청년정책: 연령·지원규모·자격요건 등) */}
-          {p.extra?.map((e) => (
-            <Row key={e.label} label={e.label} value={e.value} />
-          ))}
-        </dl>
-
-        {/* 찜 + 캘린더 */}
-        <PolicyActions
-          id={p.id}
-          title={p.title}
-          endDate={p.endDate}
-          org={p.org}
-          url={p.url}
-        />
-
-        {/* 사업개요 */}
-        {p.summaryFull && (
-          <section className="mb-6">
-            <h2 className="mb-2 text-lg font-bold text-ink">사업 개요</h2>
-            <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-secondary">
-              {p.summaryFull}
-            </p>
-          </section>
+        ))}
+        {d === null ? (
+          <span className="text-xs text-ink-faint">상시·미정</span>
+        ) : d < 0 ? (
+          <span className="text-xs text-ink-faint">마감됨</span>
+        ) : urgent ? (
+          <span className="rounded-full bg-accent-orange px-2 py-0.5 text-xs font-semibold text-white">
+            마감임박 D-{d}
+          </span>
+        ) : (
+          <span className="text-xs font-medium text-ink-muted">D-{d}</span>
         )}
+      </div>
 
-        {/* 신청방법 */}
-        {p.applyMethod && (
-          <section className="mb-6">
-            <h2 className="mb-2 text-lg font-bold text-ink">신청 방법</h2>
-            <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-secondary">
-              {p.applyMethod}
-            </p>
-          </section>
-        )}
+      <h1 className="mb-4 text-2xl font-bold leading-snug tracking-[-0.02em] text-ink sm:text-3xl">
+        {p.title}
+      </h1>
 
-        {/* 문의처 */}
-        {p.contact && (
-          <section className="mb-6">
-            <h2 className="mb-2 text-lg font-bold text-ink">문의처</h2>
-            <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-secondary">
-              {p.contact}
-            </p>
-          </section>
-        )}
+      {/* 핵심 정보 */}
+      <dl className="mb-6 rounded-[12px] border border-hairline bg-surface px-4 py-1">
+        <Row label="소관기관" value={p.org} />
+        <Row label="수행기관" value={p.execOrg} />
+        <Row label="지원대상" value={p.target} />
+        <Row label="신청기간" value={p.period} />
+        <Row label="지원분야" value={p.category} />
+        {/* 소스별 추가 정보 (청년정책: 연령·지원규모·자격요건 등) */}
+        {p.extra?.map((e) => (
+          <Row key={e.label} label={e.label} value={e.value} />
+        ))}
+      </dl>
 
-        {/* 첨부파일 */}
-        {p.fileUrl && (
-          <section className="mb-6">
-            <h2 className="mb-2 text-lg font-bold text-ink">첨부파일</h2>
-            <a
-              href={p.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-primary hover:border-primary/40"
-            >
-              {p.fileName || "첨부파일 내려받기"}
-            </a>
-          </section>
-        )}
+      {/* 찜 + 캘린더 */}
+      <PolicyActions
+        id={p.id}
+        title={p.title}
+        endDate={p.endDate}
+        org={p.org}
+        url={p.url}
+      />
 
-        {/* CTA */}
-        <div className="mb-6 flex flex-wrap gap-2">
-          {p.applyUrl && (
-            <a
-              href={p.applyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-on-primary"
-            >
-              접수 홈페이지로 이동
-            </a>
-          )}
+      {/* 사업개요 */}
+      {p.summaryFull && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-lg font-bold text-ink">사업 개요</h2>
+          <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-secondary">
+            {p.summaryFull}
+          </p>
+        </section>
+      )}
+
+      {/* 신청방법 */}
+      {p.applyMethod && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-lg font-bold text-ink">신청 방법</h2>
+          <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-secondary">
+            {p.applyMethod}
+          </p>
+        </section>
+      )}
+
+      {/* 문의처 */}
+      {p.contact && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-lg font-bold text-ink">문의처</h2>
+          <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-secondary">
+            {p.contact}
+          </p>
+        </section>
+      )}
+
+      {/* 첨부파일 */}
+      {p.fileUrl && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-lg font-bold text-ink">첨부파일</h2>
           <a
-            href={p.url}
+            href={p.fileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-full border border-hairline bg-surface px-5 py-2.5 text-sm font-medium text-ink-muted hover:border-primary/40"
+            className="inline-block rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-primary hover:border-primary/40"
           >
-            {p.source} 원문 공고 보기
+            {p.fileName || "첨부파일 내려받기"}
           </a>
-        </div>
+        </section>
+      )}
 
-        {/* 이런 공고는 어때요 */}
-        {related.length > 0 && (
-          <section className="mb-6">
-            <h2 className="mb-3 text-lg font-bold text-ink">이런 지원사업도 있어요</h2>
-            <ul className="space-y-2">
-              {related.map((r) => (
-                <li key={r.id}>
-                  <Link
-                    href={`/policy/${r.id}`}
-                    className="block rounded-[12px] border border-hairline bg-surface p-3 transition hover:shadow-soft"
-                  >
-                    <div className="mb-1 flex items-center gap-2 text-xs text-ink-muted">
-                      <span className="rounded-full border border-hairline px-2 py-0.5">
-                        {r.category}
-                      </span>
-                      {r.regions.slice(0, 1).map((x) => (
-                        <span key={x}>{x}</span>
-                      ))}
-                      {r.period && <span className="ml-auto">{r.period}</span>}
-                    </div>
-                    <p className="text-sm font-medium leading-snug text-ink">
-                      {r.title}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
+      {/* CTA */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {p.applyUrl && (
+          <a
+            href={p.applyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-on-primary"
+          >
+            접수 홈페이지로 이동
+          </a>
         )}
+        <a
+          href={p.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full border border-hairline bg-surface px-5 py-2.5 text-sm font-medium text-ink-muted hover:border-primary/40"
+        >
+          {p.source} 원문 공고 보기
+        </a>
+      </div>
 
-        <p className="rounded-lg bg-surface px-4 py-3 text-xs leading-relaxed text-ink-faint ring-1 ring-hairline">
-          이 페이지는 {p.source}의 공개 데이터를 보기 쉽게 정리한 것입니다. 신청
-          자격·제출서류 등 최종 내용은 반드시 원문 공고와 소관기관 안내를 확인해
-          주세요.
-        </p>
+      {/* 이런 공고는 어때요 */}
+      {related.length > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-3 text-lg font-bold text-ink">이런 지원사업도 있어요</h2>
+          <ul className="space-y-2">
+            {related.map((r) => (
+              <li key={r.id}>
+                <Link
+                  href={`/policy/${r.id}`}
+                  className="block rounded-[12px] border border-hairline bg-surface p-3 transition hover:shadow-soft"
+                >
+                  <div className="mb-1 flex items-center gap-2 text-xs text-ink-muted">
+                    <span className="rounded-full border border-hairline px-2 py-0.5">
+                      {r.category}
+                    </span>
+                    {r.regions.slice(0, 1).map((x) => (
+                      <span key={x}>{x}</span>
+                    ))}
+                    {r.period && <span className="ml-auto">{r.period}</span>}
+                  </div>
+                  <p className="text-sm font-medium leading-snug text-ink">
+                    {r.title}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        <div className="mt-8">
-          <Link href="/" className="text-sm text-primary hover:underline">
-            ← 다른 지원사업 보러가기
-          </Link>
-        </div>
-      </article>
+      <p className="rounded-lg bg-surface px-4 py-3 text-xs leading-relaxed text-ink-faint ring-1 ring-hairline">
+        이 페이지는 {p.source}의 공개 데이터를 보기 쉽게 정리한 것입니다. 신청
+        자격·제출서류 등 최종 내용은 반드시 원문 공고와 소관기관 안내를 확인해
+        주세요.
+      </p>
 
+      <div className="mt-8">
+        <Link href="/" className="text-sm text-primary hover:underline">
+          ← 다른 지원사업 보러가기
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+export default async function PolicyDetail({ params }: Props) {
+  const { id } = await params;
+
+  return (
+    <main>
+      <SiteHeader />
+      <Suspense fallback={<DetailSkeleton />}>
+        <PolicyContent id={id} />
+      </Suspense>
       <SiteFooter />
     </main>
   );
