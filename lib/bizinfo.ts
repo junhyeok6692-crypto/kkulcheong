@@ -65,14 +65,15 @@ function normalize(item: Record<string, unknown>): Policy {
   };
 }
 
-export async function fetchBizinfoPolicies(count = 1000): Promise<Policy[]> {
+export async function fetchBizinfoPolicies(count = 700): Promise<Policy[]> {
   const key = process.env.BIZINFO_API_KEY;
   if (!key) return []; // 키가 없으면 이 소스만 조용히 건너뜀
 
   const url = `https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do?crtfcKey=${key}&dataType=json&searchCnt=${count}`;
-  // count=2000 기준 응답이 2MB를 넘어 Next fetch 캐시에 담기지 않는 문제가 있어(경고만 발생)
-  // 1000건으로 줄여 캐시 용량 안에 들어오도록 했다. 실제 캐싱은 이 fetch 캐시(1시간) +
-  // 페이지 ISR + lib/policies.ts 의 메모리 캐시가 함께 담당한다.
+  // 실측 결과 count=1000일 때도 응답이 약 2.49MB로 Next fetch 캐시 한도(2MB)를
+  // 넘어 캐시가 전혀 적용되지 않고 있었다(콜드 인스턴스마다 6~7초씩 걸리는 원인).
+  // count=700(약 1.7MB)로 줄여 실제로 캐시가 걸리도록 했다. 실제 캐싱은 이 fetch
+  // 캐시(1시간) + 페이지 ISR + lib/policies.ts 의 메모리 캐시가 함께 담당한다.
   const res = await fetch(url, { next: { revalidate: 3600 } });
   if (!res.ok) throw new Error(`기업마당 API 오류: ${res.status}`);
 
@@ -80,4 +81,5 @@ export async function fetchBizinfoPolicies(count = 1000): Promise<Policy[]> {
   const items = Array.isArray(json.jsonArray) ? json.jsonArray : [];
   return items.map(normalize).filter((p) => p.id && p.title);
 }
+
 
