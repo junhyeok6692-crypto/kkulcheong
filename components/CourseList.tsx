@@ -7,6 +7,8 @@ import { APTITUDES } from "@/lib/ncs";
 
 const won = (n: number) => (n > 0 ? `${n.toLocaleString()}원` : "무료");
 const APT_KEY = "policyhub.aptitude";
+const LIMIT_KEY = "policyhub.trainingLimit";
+const SELECTED_KEY = "policyhub.trainingSelected";
 
 export default function CourseList({ courses }: { courses: Course[] }) {
   const [q, setQ] = useState("");
@@ -17,17 +19,48 @@ export default function CourseList({ courses }: { courses: Course[] }) {
   const [page, setPage] = useState(1);
   const [loaded, setLoaded] = useState(false);
 
+  // 한도 확인용: 남은 한도, 비교함에 담은 과정 id들
+  const [limit, setLimit] = useState<number | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [showLimit, setShowLimit] = useState(false);
+  const [affordableOnly, setAffordableOnly] = useState(false);
+
   // 선택 저장/복원
   useEffect(() => {
     try {
       const raw = localStorage.getItem(APT_KEY);
       if (raw) setApts(JSON.parse(raw));
+      const rawLimit = localStorage.getItem(LIMIT_KEY);
+      if (rawLimit) setLimit(Number(rawLimit) || null);
+      const rawSelected = localStorage.getItem(SELECTED_KEY);
+      if (rawSelected) setSelected(JSON.parse(rawSelected));
     } catch {}
     setLoaded(true);
   }, []);
   useEffect(() => {
     if (loaded) localStorage.setItem(APT_KEY, JSON.stringify(apts));
   }, [apts, loaded]);
+  useEffect(() => {
+    if (!loaded) return;
+    if (limit == null) localStorage.removeItem(LIMIT_KEY);
+    else localStorage.setItem(LIMIT_KEY, String(limit));
+  }, [limit, loaded]);
+  useEffect(() => {
+    if (loaded) localStorage.setItem(SELECTED_KEY, JSON.stringify(selected));
+  }, [selected, loaded]);
+
+  const toggleSelect = (id: string) =>
+    setSelected((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+
+  const selectedCourses = useMemo(
+    () => courses.filter((c) => selected.includes(c.id)),
+    [courses, selected]
+  );
+  const selectedTotal = useMemo(
+    () => selectedCourses.reduce((sum, c) => sum + c.cost, 0),
+    [selectedCourses]
+  );
+  const overLimit = limit != null && selectedTotal > limit;
 
   // 선택한 적성 → NCS 분야 코드
   const wantNcs = useMemo(() => {
@@ -47,13 +80,14 @@ export default function CourseList({ courses }: { courses: Course[] }) {
       if (wantNcs.size && !wantNcs.has(c.ncs1)) return false;
       if (region && c.region !== region) return false;
       if (kw && !(c.title + c.inst + c.field).toLowerCase().includes(kw)) return false;
+      if (affordableOnly && limit != null && c.cost > limit) return false;
       return true;
     });
-  }, [courses, q, region, wantNcs]);
+  }, [courses, q, region, wantNcs, affordableOnly, limit]);
 
   useEffect(() => {
     setPage(1);
-  }, [q, region, perPage, apts]);
+  }, [q, region, perPage, apts, affordableOnly, limit]);
 
   const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
   const curPage = Math.min(page, pageCount);
@@ -149,6 +183,115 @@ export default function CourseList({ courses }: { courses: Course[] }) {
         )}
       </div>
 
+      {/* 한도로 확인하기 */}
+      <div className="mb-4 rounded-[12px] border border-hairline bg-surface">
+        <button
+          onClick={() => setShowLimit((s) => !s)}
+          aria-expanded={showLimit}
+          className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-ink"
+        >
+          <span>내 한도로 확인하기</span>
+          {selected.length > 0 && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                overLimit
+                  ? "bg-accent-orange/15 text-accent-orange"
+                  : "bg-primary/10 text-primary"
+              }`}
+            >
+              선택 {selected.length}개 · {won(selectedTotal)}
+              {limit != null && ` / 한도 ${won(limit)}`}
+            </span>
+          )}
+          <span className="ml-auto text-ink-faint">{showLimit ? "▲" : "▼"}</span>
+        </button>
+
+        {showLimit && (
+          <div className="border-t border-hairline px-4 py-4">
+            <p className="mb-3 text-xs leading-relaxed text-ink-faint">
+              남은 국민내일배움카드 한도를 입력하고, 아래 목록에서 듣고 싶은 과정을
+              체크해보세요. 선택한 과정들의 수강료 합계가 한도 안에 들어오는지
+              확인할 수 있습니다. (표시 수강료는 전체 금액이며, 실제 자부담액은 더
+              적을 수 있습니다.)
+            </p>
+            <label className="mb-3 flex items-center gap-2 text-sm">
+              <span className="shrink-0 text-ink-muted">남은 한도</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                placeholder="예: 2000000"
+                aria-label="남은 국민내일배움카드 한도(원)"
+                value={limit ?? ""}
+                onChange={(e) =>
+                  setLimit(e.target.value ? Number(e.target.value) : null)
+                }
+                className="w-40 rounded border border-hairline bg-surface px-3 py-1.5 text-sm text-ink"
+              />
+              <span className="text-ink-muted">원</span>
+            </label>
+
+            <label className="mb-3 flex items-center gap-2 text-sm text-ink-muted">
+              <input
+                type="checkbox"
+                checked={affordableOnly}
+                disabled={limit == null}
+                onChange={(e) => setAffordableOnly(e.target.checked)}
+                className="accent-primary"
+              />
+              한도 내에서 신청 가능한 과정만 보기
+              {limit == null && (
+                <span className="text-xs text-ink-faint">(한도를 먼저 입력하세요)</span>
+              )}
+            </label>
+
+            {selectedCourses.length > 0 && (
+              <div className="rounded-lg border border-hairline bg-canvas p-3">
+                <ul className="mb-2 space-y-1">
+                  {selectedCourses.map((c) => (
+                    <li key={c.id} className="flex items-center gap-2 text-xs text-ink-secondary">
+                      <span className="line-clamp-1 flex-1">{c.title}</span>
+                      <span className="shrink-0 text-ink-muted">{won(c.cost)}</span>
+                      <button
+                        onClick={() => toggleSelect(c.id)}
+                        aria-label={`${c.title} 선택 해제`}
+                        className="shrink-0 text-ink-faint hover:text-accent-orange"
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex items-center justify-between border-t border-hairline pt-2 text-sm">
+                  <span className="font-semibold text-ink">
+                    합계 {won(selectedTotal)}
+                  </span>
+                  {limit != null && (
+                    <span
+                      className={`font-semibold ${
+                        overLimit ? "text-accent-orange" : "text-accent-green"
+                      }`}
+                    >
+                      {overLimit
+                        ? `한도 초과 ${won(selectedTotal - limit)}`
+                        : `한도 내 (여유 ${won(limit - selectedTotal)})`}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+            {selected.length > 0 && (
+              <button
+                onClick={() => setSelected([])}
+                className="mt-3 text-xs text-ink-faint underline"
+              >
+                선택 초기화
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* 검색 + 지역 + 개수 */}
       <div className="sticky top-0 z-30 -mx-4 mb-6 border-b border-hairline bg-canvas/90 px-4 py-4 backdrop-blur">
         <input
@@ -218,7 +361,7 @@ export default function CourseList({ courses }: { courses: Course[] }) {
               <h3 className="mb-1 font-semibold leading-snug text-ink">{c.title}</h3>
               <p className="mb-2 text-sm text-ink-muted">{c.inst}</p>
 
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-faint">
                 <span>수강료 {won(c.cost)}</span>
                 {c.capacity > 0 && (
                   <span>
@@ -226,12 +369,25 @@ export default function CourseList({ courses }: { courses: Course[] }) {
                   </span>
                 )}
                 {c.tel && <span>{c.tel}</span>}
+                <label
+                  className="relative z-10 ml-auto flex shrink-0 items-center gap-1 text-ink-secondary"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(c.id)}
+                    onChange={() => toggleSelect(c.id)}
+                    aria-label={`${c.title} 한도 확인함에 담기`}
+                    className="accent-primary"
+                  />
+                  한도 확인함에 담기
+                </label>
                 <a
                   href={c.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="relative z-10 ml-auto shrink-0 rounded-lg border border-hairline px-2 py-1 font-medium text-primary transition hover:border-primary/40 hover:bg-primary/5"
+                  className="relative z-10 shrink-0 rounded-lg border border-hairline px-2 py-1 font-medium text-primary transition hover:border-primary/40 hover:bg-primary/5"
                 >
                   고용24에서 보기 ↗
                 </a>
