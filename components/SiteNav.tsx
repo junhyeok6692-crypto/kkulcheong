@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const ITEMS = [
   { href: "/", label: "지원사업" },
-  { href: "/training", label: "훈련과정" },
+  { href: "/training", label: "내일배움카드" },
   { href: "/guide", label: "가이드" },
 ];
 
@@ -34,3 +34,4 @@ export default function SiteNav() {
     </nav>
   );
 }
+
