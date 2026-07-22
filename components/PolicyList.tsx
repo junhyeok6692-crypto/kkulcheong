@@ -184,6 +184,12 @@ function Card({
   );
 }
 
+// 마감임박 정렬 시, 같은 마감일이면 수도권(서울·인천·경기) 공고를 우선 배치
+const CAPITAL_REGIONS = ["서울", "인천", "경기"];
+function isCapitalArea(p: PolicyListItem): boolean {
+  return p.regions.some((r) => CAPITAL_REGIONS.includes(r));
+}
+
 // 정책이 속한 지역 키 (지역 태그 없으면 전국·공통)
 const REGION_ORDER = [...REGION_OPTIONS, "전국", "전국·공통"];
 const NATIONWIDE = ["전국", "전국·공통"];
@@ -269,7 +275,12 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
         const db = daysLeft(b.endDate);
         const va = da === null || da < 0 ? Infinity : da;
         const vb = db === null || db < 0 ? Infinity : db;
-        return va - vb;
+        if (va !== vb) return va - vb;
+        // 마감일이 같으면 수도권 공고를 먼저 보여준다
+        const ca = isCapitalArea(a);
+        const cb = isCapitalArea(b);
+        if (ca !== cb) return ca ? -1 : 1;
+        return 0;
       });
   }, [policies, q, hideExpired, profile, eligOnly, myInfo, savedOnly, savedIds]);
 
@@ -652,3 +663,4 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
     </div>
   );
 }
+

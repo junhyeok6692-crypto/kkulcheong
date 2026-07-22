@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { fetchCourses } from "@/lib/training";
+import { getAllCourses } from "@/lib/training";
 import CourseList from "@/components/CourseList";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -15,10 +15,10 @@ export const metadata: Metadata = {
 };
 
 export default async function TrainingPage() {
-  let courses: Awaited<ReturnType<typeof fetchCourses>> = [];
+  let courses: Awaited<ReturnType<typeof getAllCourses>> = [];
   let error = "";
   try {
-    courses = await fetchCourses();
+    courses = await getAllCourses();
   } catch (e) {
     error = e instanceof Error ? e.message : "훈련과정을 불러오지 못했습니다.";
   }
@@ -80,3 +80,4 @@ export default async function TrainingPage() {
     </main>
   );
 }
+

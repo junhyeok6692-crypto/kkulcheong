@@ -81,6 +81,12 @@ export default async function Home() {
               내 정보를 넣으면 <span className="text-[#c05600]">맞춤 정책</span>을
               찾아드립니다.
             </span>
+            <br />
+            <span className="mt-1 inline-block text-sm text-[#8a6a2e]">
+              공고를 열어보면 함께 신청하면 좋은{" "}
+              <span className="font-semibold text-[#4a330a]">연계 지원사업</span>까지
+              같이 추천해드려요.
+            </span>
           </p>
           {/* 훈련과정은 성격이 다른 콘텐츠라 카드로 분리해 눈에 띄게 한다 */}
           <div className="mt-8 flex flex-wrap gap-3">
@@ -131,3 +137,4 @@ export default async function Home() {
     </main>
   );
 }
+

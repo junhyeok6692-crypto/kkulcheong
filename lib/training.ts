@@ -148,3 +148,39 @@ export async function fetchCourses(): Promise<Course[]> {
 
   return out.sort((a, b) => b.score - a.score || a.start.localeCompare(b.start));
 }
+
+// lib/policies.ts와 동일한 패턴의 메모리 캐시 (+ 동시요청 합치기)
+const TTL_MS = 60 * 60 * 1000; // 1시간
+let cache: { at: number; data: Course[] } | null = null;
+let inflight: Promise<Course[]> | null = null;
+
+export async function getAllCourses(): Promise<Course[]> {
+  if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
+  if (inflight) return inflight;
+  inflight = fetchCourses()
+    .then((data) => {
+      cache = { at: Date.now(), data };
+      return data;
+    })
+    .finally(() => {
+      inflight = null;
+    });
+  return inflight;
+}
+
+export async function getCourse(id: string): Promise<Course | null> {
+  const all = await getAllCourses();
+  return all.find((c) => c.id === id) ?? null;
+}
+
+/** 같은 분야(NCS 대분류)의 다른 과정을 만족도순으로 추천 */
+export async function getRelatedCourses(id: string, limit = 5): Promise<Course[]> {
+  const all = await getAllCourses();
+  const me = all.find((c) => c.id === id);
+  if (!me) return [];
+  return all
+    .filter((c) => c.id !== me.id && c.ncs1 === me.ncs1)
+    .sort((a, b) => b.score - a.score || a.start.localeCompare(b.start))
+    .slice(0, limit);
+}
+
