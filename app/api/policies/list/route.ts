@@ -7,8 +7,8 @@
 // 자격 자가진단(myInfo)·맞춤 프로필은 원래 localStorage에만 있던 값인데, 이제
 // 필터링을 위해 요청 쿼리로 서버에 전달된다(자체 서버로만 가고 별도 저장은 하지 않음).
 
-import { getAllPolicies } from "@/lib/policies";
-import { toListItem, daysLeft } from "@/lib/types";
+import { getAllPolicyListItems } from "@/lib/policies";
+import { daysLeft } from "@/lib/types";
 import { judge, type MyInfo } from "@/lib/eligibility";
 import { matchPolicy, type Profile } from "@/lib/profile";
 import { isCapitalArea, REGION_ORDER, policyRegions } from "@/lib/policy-filter";
@@ -51,8 +51,7 @@ export async function GET(req: Request) {
   const perPage = Number(searchParams.get("perPage")) || 10;
 
   try {
-    const all = await getAllPolicies();
-    const items = all.map(toListItem);
+    const items = await getAllPolicyListItems();
 
     // 소스/지역 필터를 제외한 나머지 필터 적용 (소스 버튼 카운트의 기준)
     const preBase = items
