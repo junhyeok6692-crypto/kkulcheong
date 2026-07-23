@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { PolicyListItem } from "@/lib/types";
 import { daysLeft } from "@/lib/types";
 import {
-  EMPTY_INFO, isInfoSet, loadInfo, saveInfo, judge, ageOf, type MyInfo,
+  EMPTY_INFO, isInfoSet, loadInfo, saveInfo, ageOf, type MyInfo,
 } from "@/lib/eligibility";
 import { JOB_CHOICES, SCHOOL_CHOICES } from "@/lib/youth-codes";
 import { loadSaved, saveSaved } from "@/lib/saved";
@@ -17,9 +17,9 @@ import {
   isProfileSet,
   loadProfile,
   saveProfile,
-  matchPolicy,
   type Profile,
 } from "@/lib/profile";
+import { NATIONWIDE } from "@/lib/policy-filter";
 
 // 소스 표시 이름
 const SOURCE_LABEL: Record<string, string> = {
@@ -100,6 +100,8 @@ function Chip({
     </button>
   );
 }
+
+type ResultItem = PolicyListItem & { verdict?: "eligible" | "ineligible" | "unknown" };
 
 function Card({
   p,
@@ -184,18 +186,6 @@ function Card({
   );
 }
 
-// 마감임박 정렬 시, 같은 마감일이면 수도권(서울·인천·경기) 공고를 우선 배치
-const CAPITAL_REGIONS = ["서울", "인천", "경기"];
-function isCapitalArea(p: PolicyListItem): boolean {
-  return p.regions.some((r) => CAPITAL_REGIONS.includes(r));
-}
-
-// 정책이 속한 지역 키 (지역 태그 없으면 전국·공통)
-const REGION_ORDER = [...REGION_OPTIONS, "전국", "전국·공통"];
-const NATIONWIDE = ["전국", "전국·공통"];
-function policyRegions(p: PolicyListItem): string[] {
-  return p.regions.length ? p.regions : ["전국·공통"];
-}
 const regionBtnCls = (active: boolean) =>
   `rounded-full px-3 py-1 text-sm transition ${
     active
@@ -220,33 +210,19 @@ function ListSkeleton() {
   );
 }
 
+const EMPTY_RESULT = {
+  items: [] as ResultItem[],
+  total: 0,
+  preBaseTotal: 0,
+  baseTotal: 0,
+  sourceCounts: { 기업마당: 0, 온통청년: 0, "K-Startup": 0 } as Record<string, number>,
+  regionCounts: [] as { r: string; n: number }[],
+  pageCount: 1,
+};
+
 export default function PolicyList() {
-  const [policies, setPolicies] = useState<PolicyListItem[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [dataError, setDataError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/policies/list")
-      .then((res) => {
-        if (!res.ok) throw new Error("failed");
-        return res.json();
-      })
-      .then((data: { items?: PolicyListItem[] }) => {
-        if (!cancelled) setPolicies(data.items ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setDataError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setDataLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [hideExpired, setHideExpired] = useState(true);
   const [regionMode, setRegionMode] = useState(false);
   const [regionFilter, setRegionFilter] = useState("");
@@ -258,6 +234,10 @@ export default function PolicyList() {
   const [savedOnly, setSavedOnly] = useState(false);
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
+
+  const [result, setResult] = useState(EMPTY_RESULT);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState(false);
 
   // 프로필 (localStorage 연동)
   const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
@@ -274,10 +254,69 @@ export default function PolicyList() {
   useEffect(() => {
     if (loaded) saveInfo(myInfo);
   }, [myInfo, loaded]);
+
+  // 검색어는 300ms 디바운스 — 키 입력마다 서버에 요청을 보내지 않는다
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+
   // 필터/페이지 크기가 바뀌면 1페이지로 초기화
   useEffect(() => {
     setPage(1);
-  }, [q, hideExpired, profile, regionFilter, sourceFilter, perPage, eligOnly, savedOnly, myInfo]);
+  }, [debouncedQ, hideExpired, profile, regionFilter, sourceFilter, perPage, eligOnly, savedOnly, myInfo]);
+
+  // 필터/페이지가 바뀔 때마다 서버에서 해당 조건에 맞는 페이지만 받아온다
+  useEffect(() => {
+    if (!loaded) return;
+    let cancelled = false;
+
+    const params = new URLSearchParams();
+    if (debouncedQ) params.set("q", debouncedQ);
+    params.set("hideExpired", hideExpired ? "1" : "0");
+    if (sourceFilter) params.set("source", sourceFilter);
+    if (regionFilter) params.set("region", regionFilter);
+    if (savedOnly) {
+      params.set("savedOnly", "1");
+      if (savedIds.length) params.set("savedIds", savedIds.join(","));
+    }
+    if (eligOnly) params.set("eligOnly", "1");
+    if (myInfo.birthYear) params.set("birthYear", String(myInfo.birthYear));
+    if (myInfo.job) params.set("job", myInfo.job);
+    if (myInfo.school) params.set("school", myInfo.school);
+    if (myInfo.income !== null) params.set("income", String(myInfo.income));
+    if (profile.region) params.set("profileRegion", profile.region);
+    if (profile.targets.length) params.set("profileTargets", profile.targets.join(","));
+    if (profile.interests.length) params.set("profileInterests", profile.interests.join(","));
+    params.set("page", String(page));
+    params.set("perPage", String(perPage));
+
+    setDataLoading(true);
+    fetch(`/api/policies/list?${params}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("failed");
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        if (data.error) throw new Error(data.error);
+        setResult(data);
+        setDataError(false);
+      })
+      .catch(() => {
+        if (!cancelled) setDataError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setDataLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    loaded, debouncedQ, hideExpired, sourceFilter, regionFilter,
+    savedOnly, savedIds, eligOnly, myInfo, profile, page, perPage,
+  ]);
 
   const toggleSave = (id: string) => {
     const next = savedIds.includes(id)
@@ -293,83 +332,17 @@ export default function PolicyList() {
       [key]: p[key].includes(v) ? p[key].filter((x) => x !== v) : [...p[key], v],
     }));
 
-  // 소스/지역 필터를 제외한 나머지 필터 적용 (소스 버튼 카운트의 기준)
-  const preBase = useMemo(() => {
-    const kw = q.trim().toLowerCase();
-    return policies
-      .filter((p) => {
-        if (savedOnly && !savedIds.includes(p.id)) return false;
-        if (eligOnly && isInfoSet(myInfo) && judge(p, myInfo).verdict === "ineligible")
-          return false;
-        if (isProfileSet(profile) && !matchPolicy(p, profile)) return false;
-        if (hideExpired) {
-          const d = daysLeft(p.endDate);
-          if (d !== null && d < 0) return false;
-        }
-        if (kw) {
-          const hay = (p.title + p.summary + p.tags.join(" ")).toLowerCase();
-          if (!hay.includes(kw)) return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        const da = daysLeft(a.endDate);
-        const db = daysLeft(b.endDate);
-        const va = da === null || da < 0 ? Infinity : da;
-        const vb = db === null || db < 0 ? Infinity : db;
-        if (va !== vb) return va - vb;
-        // 마감일이 같으면 수도권 공고를 먼저 보여준다
-        const ca = isCapitalArea(a);
-        const cb = isCapitalArea(b);
-        if (ca !== cb) return ca ? -1 : 1;
-        return 0;
-      });
-  }, [policies, q, hideExpired, profile, eligOnly, myInfo, savedOnly, savedIds]);
-
-  // 소스별 건수 (버튼용)
-  const sourceCounts = useMemo(() => {
-    const c: Record<string, number> = { 기업마당: 0, 온통청년: 0, "K-Startup": 0 };
-    for (const p of preBase) c[p.source] = (c[p.source] ?? 0) + 1;
-    return c;
-  }, [preBase]);
-
-  // 소스 필터 적용 (지역 버튼 카운트의 기준)
-  const base = useMemo(
-    () => (sourceFilter ? preBase.filter((p) => p.source === sourceFilter) : preBase),
-    [preBase, sourceFilter]
-  );
-
-  // 지역별 건수 (버튼용)
-  const regionButtons = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const p of base)
-      for (const r of policyRegions(p)) counts[r] = (counts[r] ?? 0) + 1;
-    return REGION_ORDER.filter((r) => counts[r]).map((r) => ({ r, n: counts[r] }));
-  }, [base]);
-
-  // 선택 지역 적용
-  const visible = useMemo(
-    () =>
-      regionFilter
-        ? base.filter((p) => policyRegions(p).includes(regionFilter))
-        : base,
-    [base, regionFilter]
-  );
-
   const profileSet = isProfileSet(profile);
 
-  // 페이지네이션
-  const pageCount = Math.max(1, Math.ceil(visible.length / perPage));
-  const curPage = Math.min(page, pageCount);
-  const paged = visible.slice((curPage - 1) * perPage, curPage * perPage);
+  const curPage = Math.min(page, result.pageCount);
   const goPage = (n: number) => {
-    setPage(Math.min(Math.max(1, n), pageCount));
+    setPage(Math.min(Math.max(1, n), result.pageCount));
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
   // 표시할 페이지 번호(현재 주변 + 처음/끝)
   const pageNums: (number | "…")[] = [];
-  for (let i = 1; i <= pageCount; i++) {
-    if (i === 1 || i === pageCount || Math.abs(i - curPage) <= 2) pageNums.push(i);
+  for (let i = 1; i <= result.pageCount; i++) {
+    if (i === 1 || i === result.pageCount || Math.abs(i - curPage) <= 2) pageNums.push(i);
     else if (pageNums[pageNums.length - 1] !== "…") pageNums.push("…");
   }
 
@@ -524,16 +497,16 @@ export default function PolicyList() {
         {/* 구분: 정부지원사업 / 청년정책 */}
         <div className="mb-3 flex flex-wrap gap-2 text-sm">
           <button onClick={() => setSourceFilter("")} className={regionBtnCls(sourceFilter === "")}>
-            전체 {preBase.length}
+            전체 {result.preBaseTotal}
           </button>
           {(["기업마당", "온통청년", "K-Startup"] as const).map((s) =>
-            sourceCounts[s] ? (
+            result.sourceCounts[s] ? (
               <button
                 key={s}
                 onClick={() => setSourceFilter(s)}
                 className={regionBtnCls(sourceFilter === s)}
               >
-                {SOURCE_LABEL[s]} {sourceCounts[s]}
+                {SOURCE_LABEL[s]} {result.sourceCounts[s]}
               </button>
             ) : null
           )}
@@ -585,7 +558,7 @@ export default function PolicyList() {
             마감 제외
           </label>
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-ink-faint">{visible.length}건</span>
+            <span className="text-ink-faint">{result.total}건</span>
             <select
               value={perPage}
               onChange={(e) => setPerPage(Number(e.target.value))}
@@ -607,9 +580,9 @@ export default function PolicyList() {
             {/* 윗줄: 전체 · 전국 · 전국·공통 */}
             <div className="flex flex-wrap gap-2">
               <button onClick={() => setRegionFilter("")} className={regionBtnCls(regionFilter === "")}>
-                전체 {base.length}
+                전체 {result.baseTotal}
               </button>
-              {regionButtons
+              {result.regionCounts
                 .filter(({ r }) => NATIONWIDE.includes(r))
                 .map(({ r, n }) => (
                   <button key={r} onClick={() => setRegionFilter(r)} className={regionBtnCls(regionFilter === r)}>
@@ -619,7 +592,7 @@ export default function PolicyList() {
             </div>
             {/* 아랫줄: 시·도 */}
             <div className="flex flex-wrap gap-2">
-              {regionButtons
+              {result.regionCounts
                 .filter(({ r }) => REGION_OPTIONS.includes(r))
                 .map(({ r, n }) => (
                   <button key={r} onClick={() => setRegionFilter(r)} className={regionBtnCls(regionFilter === r)}>
@@ -637,12 +610,12 @@ export default function PolicyList() {
           <span className="rounded-md bg-primary px-2 py-0.5 text-sm text-on-primary">
             {regionFilter}
           </span>
-          <span className="text-sm font-normal text-ink-faint">{visible.length}건</span>
+          <span className="text-sm font-normal text-ink-faint">{result.total}건</span>
         </h2>
       )}
 
       {/* 목록 */}
-      {dataLoading ? (
+      {dataLoading && result.items.length === 0 ? (
         <ListSkeleton />
       ) : dataError ? (
         <p className="py-16 text-center text-ink-faint">
@@ -650,20 +623,20 @@ export default function PolicyList() {
         </p>
       ) : (
         <>
-          <ul className="space-y-3">
-            {paged.map((p) => (
+          <ul className={`space-y-3 transition-opacity ${dataLoading ? "opacity-50" : ""}`}>
+            {result.items.map((p) => (
               <li key={p.id}>
                 <Card
                   p={p}
                   saved={savedIds.includes(p.id)}
                   onToggleSave={toggleSave}
-                  verdict={isInfoSet(myInfo) ? judge(p, myInfo).verdict : undefined}
+                  verdict={p.verdict}
                 />
               </li>
             ))}
           </ul>
 
-          {visible.length === 0 && (
+          {result.total === 0 && (
             <p className="py-16 text-center text-ink-faint">
               조건에 맞는 지원사업이 없습니다.
               {profileSet && " 내 정보 조건을 넓혀보세요."}
@@ -673,7 +646,7 @@ export default function PolicyList() {
       )}
 
       {/* 페이지네이션 */}
-      {pageCount > 1 && (
+      {result.pageCount > 1 && (
         <nav className="mt-8 flex items-center justify-center gap-1 text-sm">
           <button
             onClick={() => goPage(curPage - 1)}
@@ -705,7 +678,7 @@ export default function PolicyList() {
           )}
           <button
             onClick={() => goPage(curPage + 1)}
-            disabled={curPage === pageCount}
+            disabled={curPage === result.pageCount}
             className="rounded-lg border border-hairline bg-surface px-3 py-1.5 text-ink-muted disabled:opacity-40"
           >
             다음
@@ -715,5 +688,3 @@ export default function PolicyList() {
     </div>
   );
 }
-
-
