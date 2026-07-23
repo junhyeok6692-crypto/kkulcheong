@@ -9,8 +9,8 @@
 // 사용자가 외부 API 응답을 기다리는 경우를 최소화한다.
 
 import { after } from "next/server";
-import type { Policy } from "./types";
-import { daysLeft } from "./types";
+import type { Policy, PolicyListItem } from "./types";
+import { daysLeft, toListItem } from "./types";
 import { fetchBizinfoPolicies } from "./bizinfo";
 import { fetchYouthPolicies } from "./youth";
 import { fetchKstartupPolicies } from "./kstartup";
@@ -19,8 +19,12 @@ import { kvGetJson, kvSetJson } from "./kv";
 const TTL_MS = 60 * 60 * 1000; // 1시간 - 이 안이면 "신선"하다고 보고 바로 반환
 const STALE_TTL_SECONDS = 6 * 60 * 60; // 6시간 - Redis에는 이만큼 더 오래 들고 있는다
 const KV_KEY = "kkulcheong:policies:v1";
+// 목록 화면은 상세 필드(전문 설명·첨부파일 등)가 필요 없다. 콜드 인스턴스가 Redis에서
+// 매번 전체 데이터를 받아 파싱하는 비용을 줄이려고, 이미 축약한 목록 전용 캐시를 따로 둔다.
+const LIST_KV_KEY = "kkulcheong:policies:list:v1";
 
 let cache: { at: number; data: Policy[] } | null = null;
+let listCache: { at: number; data: PolicyListItem[] } | null = null;
 let inflight: Promise<Policy[]> | null = null;
 let refreshing = false; // 같은 인스턴스에서 백그라운드 새로고침 중복 방지
 
@@ -60,9 +64,15 @@ async function fetchAll(): Promise<Policy[]> {
 
 async function refreshAndStore(): Promise<Policy[]> {
   const data = await fetchAll();
-  const entry = { at: Date.now(), data };
+  const at = Date.now();
+  const entry = { at, data };
   cache = entry;
-  await kvSetJson(KV_KEY, entry, STALE_TTL_SECONDS);
+  const listEntry = { at, data: data.map(toListItem) };
+  listCache = listEntry;
+  await Promise.all([
+    kvSetJson(KV_KEY, entry, STALE_TTL_SECONDS),
+    kvSetJson(LIST_KV_KEY, listEntry, STALE_TTL_SECONDS),
+  ]);
   return data;
 }
 
@@ -101,6 +111,35 @@ export async function getAllPolicies(): Promise<Policy[]> {
 
   // 3. 어디에도 캐시가 없음 - 정말 처음이라 어쩔 수 없이 기다려야 한다
   return fetchFresh();
+}
+
+/**
+ * 목록 화면 전용 — 축약된 필드만 담긴 캐시를 우선 사용해 콜드 인스턴스에서도
+ * Redis 전송·파싱량을 줄인다. 축약 캐시가 아직 없으면(첫 배포 직후 등)
+ * getAllPolicies()로 폴백하고, 그 결과가 다음부터는 축약 캐시도 채운다.
+ */
+export async function getAllPolicyListItems(): Promise<PolicyListItem[]> {
+  if (listCache && Date.now() - listCache.at < TTL_MS) return listCache.data;
+
+  const shared = await kvGetJson<{ at: number; data: PolicyListItem[] }>(LIST_KV_KEY);
+  if (shared) {
+    listCache = shared;
+    if (Date.now() - shared.at < TTL_MS) return shared.data;
+    if (!refreshing) {
+      refreshing = true;
+      after(() =>
+        fetchFresh()
+          .catch((e) => console.error("[policies] 백그라운드 새로고침 실패:", e))
+          .finally(() => {
+            refreshing = false;
+          })
+      );
+    }
+    return shared.data;
+  }
+
+  const all = await fetchFresh();
+  return all.map(toListItem);
 }
 
 export async function getPolicy(id: string): Promise<Policy | null> {
@@ -182,4 +221,5 @@ export async function getRelated(id: string, limit = 5): Promise<Policy[]> {
     .slice(0, limit)
     .map((x) => x.p);
 }
+
 
