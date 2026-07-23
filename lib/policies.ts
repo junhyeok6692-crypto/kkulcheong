@@ -1,14 +1,28 @@
-// 여러 소스를 합쳐 하나의 목록으로 제공 (+ 메모리 캐시)
+// 여러 소스를 합쳐 하나의 목록으로 제공 (+ Redis 공유 캐시 + 인스턴스 메모리 캐시)
+//
+// 이전에는 인스턴스별 메모리 변수(let cache)만 썼는데, Vercel 서버리스는 요청마다
+// 다른 인스턴스로 갈 수 있어 인스턴스가 바뀌면 캐시가 없는 것처럼 매번 외부 API를
+// 새로 불러야 했다(그래서 어떤 요청은 빠르고 어떤 요청은 몇 초씩 걸리는 문제 발생).
+// 이제 모든 인스턴스가 공유하는 Redis에 결과를 저장해 이 문제를 없앤다.
+// 또한 캐시가 오래됐어도(신선하지 않아도) 일단 있는 데이터를 즉시 반환하고,
+// 새로고침은 응답을 보낸 뒤 백그라운드에서 진행한다(stale-while-revalidate) —
+// 사용자가 외부 API 응답을 기다리는 경우를 최소화한다.
 
+import { after } from "next/server";
 import type { Policy } from "./types";
 import { daysLeft } from "./types";
 import { fetchBizinfoPolicies } from "./bizinfo";
 import { fetchYouthPolicies } from "./youth";
 import { fetchKstartupPolicies } from "./kstartup";
+import { kvGetJson, kvSetJson } from "./kv";
 
-const TTL_MS = 60 * 60 * 1000; // 1시간
+const TTL_MS = 60 * 60 * 1000; // 1시간 - 이 안이면 "신선"하다고 보고 바로 반환
+const STALE_TTL_SECONDS = 6 * 60 * 60; // 6시간 - Redis에는 이만큼 더 오래 들고 있는다
+const KV_KEY = "kkulcheong:policies:v1";
+
 let cache: { at: number; data: Policy[] } | null = null;
 let inflight: Promise<Policy[]> | null = null;
+let refreshing = false; // 같은 인스턴스에서 백그라운드 새로고침 중복 방지
 
 const CAPITAL_REGIONS = ["서울", "인천", "경기"];
 
@@ -44,18 +58,49 @@ async function fetchAll(): Promise<Policy[]> {
   });
 }
 
-export async function getAllPolicies(): Promise<Policy[]> {
-  if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
+async function refreshAndStore(): Promise<Policy[]> {
+  const data = await fetchAll();
+  const entry = { at: Date.now(), data };
+  cache = entry;
+  await kvSetJson(KV_KEY, entry, STALE_TTL_SECONDS);
+  return data;
+}
+
+function fetchFresh(): Promise<Policy[]> {
   if (inflight) return inflight; // 동시 요청 합치기
-  inflight = fetchAll()
-    .then((data) => {
-      cache = { at: Date.now(), data };
-      return data;
-    })
-    .finally(() => {
-      inflight = null;
-    });
+  inflight = refreshAndStore().finally(() => {
+    inflight = null;
+  });
   return inflight;
+}
+
+export async function getAllPolicies(): Promise<Policy[]> {
+  // 1. 이 인스턴스가 이미 최근에 받아온 데이터가 있으면 그대로 반환 (가장 빠름)
+  if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
+
+  // 2. 다른 인스턴스가 Redis에 저장해둔 데이터가 있는지 확인 (인스턴스 간 공유)
+  const shared = await kvGetJson<{ at: number; data: Policy[] }>(KV_KEY);
+  if (shared) {
+    cache = shared; // 이 인스턴스 메모리에도 채워서 다음 요청부터는 1번으로 빠지게 함
+    if (Date.now() - shared.at < TTL_MS) {
+      return shared.data; // 신선함 - 바로 반환
+    }
+    // 오래됐지만 있음 - 일단 그대로 보여주고, 응답 이후 백그라운드에서 새로고침
+    if (!refreshing) {
+      refreshing = true;
+      after(() =>
+        fetchFresh()
+          .catch((e) => console.error("[policies] 백그라운드 새로고침 실패:", e))
+          .finally(() => {
+            refreshing = false;
+          })
+      );
+    }
+    return shared.data;
+  }
+
+  // 3. 어디에도 캐시가 없음 - 정말 처음이라 어쩔 수 없이 기다려야 한다
+  return fetchFresh();
 }
 
 export async function getPolicy(id: string): Promise<Policy | null> {
@@ -137,3 +182,4 @@ export async function getRelated(id: string, limit = 5): Promise<Policy[]> {
     .slice(0, limit)
     .map((x) => x.p);
 }
+
