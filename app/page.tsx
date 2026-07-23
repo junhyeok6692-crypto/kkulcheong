@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { getAllPolicies } from "@/lib/policies";
-import { toListItem } from "@/lib/types";
 import PolicyList from "@/components/PolicyList";
 import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
@@ -24,15 +22,7 @@ const STARS = [
   { c: "bg-accent-green", top: "48%", left: "48%", s: 6 },
 ];
 
-export default async function Home() {
-  let policies: Awaited<ReturnType<typeof getAllPolicies>> = [];
-  let error = "";
-  try {
-    policies = await getAllPolicies();
-  } catch (e) {
-    error = e instanceof Error ? e.message : "데이터를 불러오지 못했습니다.";
-  }
-
+export default function Home() {
   return (
     <main>
       {/* 딥 인디고 'night' 히어로 밴드 — 페이지의 단 하나의 어두운 섬 */}
@@ -124,17 +114,12 @@ export default async function Home() {
 
       {/* 본문 — 따뜻한 캔버스 */}
       <div className="mx-auto max-w-3xl px-4 py-8">
-        {error ? (
-          <div className="rounded-xl border border-hairline bg-surface p-4 text-sm text-ink-muted">
-            데이터를 불러오지 못했어요: {error}
-          </div>
-        ) : (
-          <PolicyList policies={policies.map(toListItem)} />
-        )}
+        <PolicyList />
       </div>
 
       <SiteFooter />
     </main>
   );
 }
+
 
