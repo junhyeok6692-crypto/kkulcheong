@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getCourse, getRelatedCourses } from "@/lib/training";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import TimetableToggle from "@/components/TimetableToggle";
 import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -141,6 +142,8 @@ export default async function TrainingDetail({ params }: Props) {
           </a>
         </div>
 
+        <TimetableToggle url={c.url} />
+
         {related.length > 0 && (
           <section className="mb-6">
             <h2 className="mb-3 text-lg font-bold text-ink">같은 분야의 다른 과정</h2>
@@ -186,3 +189,4 @@ export default async function TrainingDetail({ params }: Props) {
     </main>
   );
 }
+
