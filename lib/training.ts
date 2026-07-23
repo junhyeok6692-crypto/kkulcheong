@@ -149,23 +149,56 @@ export async function fetchCourses(): Promise<Course[]> {
   return out.sort((a, b) => b.score - a.score || a.start.localeCompare(b.start));
 }
 
-// lib/policies.ts와 동일한 패턴의 메모리 캐시 (+ 동시요청 합치기)
+// lib/policies.ts와 동일한 패턴: Redis 공유 캐시 + 인스턴스 메모리 캐시 +
+// stale-while-revalidate (오래된 캐시라도 즉시 반환하고 새로고침은 백그라운드에서)
+import { after } from "next/server";
+import { kvGetJson, kvSetJson } from "./kv";
+
 const TTL_MS = 60 * 60 * 1000; // 1시간
+const STALE_TTL_SECONDS = 6 * 60 * 60; // 6시간
+const KV_KEY = "kkulcheong:courses:v1";
+
 let cache: { at: number; data: Course[] } | null = null;
 let inflight: Promise<Course[]> | null = null;
+let refreshing = false;
+
+async function refreshAndStore(): Promise<Course[]> {
+  const data = await fetchCourses();
+  const entry = { at: Date.now(), data };
+  cache = entry;
+  await kvSetJson(KV_KEY, entry, STALE_TTL_SECONDS);
+  return data;
+}
+
+function fetchFresh(): Promise<Course[]> {
+  if (inflight) return inflight;
+  inflight = refreshAndStore().finally(() => {
+    inflight = null;
+  });
+  return inflight;
+}
 
 export async function getAllCourses(): Promise<Course[]> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
-  if (inflight) return inflight;
-  inflight = fetchCourses()
-    .then((data) => {
-      cache = { at: Date.now(), data };
-      return data;
-    })
-    .finally(() => {
-      inflight = null;
-    });
-  return inflight;
+
+  const shared = await kvGetJson<{ at: number; data: Course[] }>(KV_KEY);
+  if (shared) {
+    cache = shared;
+    if (Date.now() - shared.at < TTL_MS) return shared.data;
+    if (!refreshing) {
+      refreshing = true;
+      after(() =>
+        fetchFresh()
+          .catch((e) => console.error("[training] 백그라운드 새로고침 실패:", e))
+          .finally(() => {
+            refreshing = false;
+          })
+      );
+    }
+    return shared.data;
+  }
+
+  return fetchFresh();
 }
 
 export async function getCourse(id: string): Promise<Course | null> {
@@ -183,4 +216,5 @@ export async function getRelatedCourses(id: string, limit = 5): Promise<Course[]
     .sort((a, b) => b.score - a.score || a.start.localeCompare(b.start))
     .slice(0, limit);
 }
+
 
