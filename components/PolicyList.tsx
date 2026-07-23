@@ -203,7 +203,49 @@ const regionBtnCls = (active: boolean) =>
       : "border border-hairline bg-surface text-ink-muted hover:border-primary/40"
   }`;
 
-export default function PolicyList({ policies }: { policies: PolicyListItem[] }) {
+function ListSkeleton() {
+  return (
+    <div className="space-y-3" aria-hidden>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="animate-pulse rounded-[12px] border border-hairline bg-surface p-4"
+        >
+          <div className="mb-2 h-4 w-24 rounded bg-canvas" />
+          <div className="mb-2 h-5 w-3/4 rounded bg-canvas" />
+          <div className="h-4 w-1/2 rounded bg-canvas" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function PolicyList() {
+  const [policies, setPolicies] = useState<PolicyListItem[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/policies/list")
+      .then((res) => {
+        if (!res.ok) throw new Error("failed");
+        return res.json();
+      })
+      .then((data: { items?: PolicyListItem[] }) => {
+        if (!cancelled) setPolicies(data.items ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setDataError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setDataLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [q, setQ] = useState("");
   const [hideExpired, setHideExpired] = useState(true);
   const [regionMode, setRegionMode] = useState(false);
@@ -600,24 +642,34 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
       )}
 
       {/* 목록 */}
-      <ul className="space-y-3">
-        {paged.map((p) => (
-          <li key={p.id}>
-            <Card
-              p={p}
-              saved={savedIds.includes(p.id)}
-              onToggleSave={toggleSave}
-              verdict={isInfoSet(myInfo) ? judge(p, myInfo).verdict : undefined}
-            />
-          </li>
-        ))}
-      </ul>
-
-      {visible.length === 0 && (
+      {dataLoading ? (
+        <ListSkeleton />
+      ) : dataError ? (
         <p className="py-16 text-center text-ink-faint">
-          조건에 맞는 지원사업이 없습니다.
-          {profileSet && " 내 정보 조건을 넓혀보세요."}
+          데이터를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.
         </p>
+      ) : (
+        <>
+          <ul className="space-y-3">
+            {paged.map((p) => (
+              <li key={p.id}>
+                <Card
+                  p={p}
+                  saved={savedIds.includes(p.id)}
+                  onToggleSave={toggleSave}
+                  verdict={isInfoSet(myInfo) ? judge(p, myInfo).verdict : undefined}
+                />
+              </li>
+            ))}
+          </ul>
+
+          {visible.length === 0 && (
+            <p className="py-16 text-center text-ink-faint">
+              조건에 맞는 지원사업이 없습니다.
+              {profileSet && " 내 정보 조건을 넓혀보세요."}
+            </p>
+          )}
+        </>
       )}
 
       {/* 페이지네이션 */}
@@ -663,4 +715,5 @@ export default function PolicyList({ policies }: { policies: PolicyListItem[] })
     </div>
   );
 }
+
 
