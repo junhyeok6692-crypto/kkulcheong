@@ -294,6 +294,12 @@ async function PolicyContent({ id }: { id: string }) {
 export default async function PolicyDetail({ params }: Props) {
   const { id } = await params;
 
+  // 존재 여부는 스트리밍(Suspense) 시작 전에 확인한다. 응답이 시작된 뒤에
+  // notFound()가 불리면 이미 200이 나가버려 "soft 404"(200+noindex)가 되기 때문.
+  // getPolicy는 캐시된 목록에서 찾는 것이라 예열 상태에선 비용이 거의 없다.
+  const exists = await getPolicy(id);
+  if (!exists) notFound();
+
   return (
     <main>
       <SiteHeader />
@@ -304,3 +310,4 @@ export default async function PolicyDetail({ params }: Props) {
     </main>
   );
 }
+
